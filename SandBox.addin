@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Command">
+    <Text>SandBox - Command 1</Text>
+    <Description>Some description</Description>
+    <Assembly>SandBox\SandBox.dll</Assembly>
+    <FullClassName>SandBox.cmdUpdateVTs</FullClassName>
+    <ClientId>16d7d121-3a6b-4caa-a8ab-4981a950d43a</ClientId>
+    <VendorId>com.YOUR COMPANY NAME</VendorId>
+    <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
+  </AddIn>
+  <AddIn Type="Command">
+    <Text>SandBox - Command 2</Text>
+    <Description>Some description</Description>
+    <Assembly>SandBox\SandBox.dll</Assembly>
+    <FullClassName>SandBox.Command2</FullClassName>
+    <ClientId>654f0f69-ee04-4b6d-8da0-5ea7c6c25961</ClientId>
+    <VendorId>com.YOUR COMPANY NAME</VendorId>
+    <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
+  </AddIn>
+  <AddIn Type="Application">
+    <Name>SandBox</Name>
+    <Assembly>SandBox\SandBox.dll</Assembly>
+    <FullClassName>SandBox.App</FullClassName>
+    <ClientId>a03cd51d-312a-4f27-88cc-57eaceaab1a9</ClientId>
+    <VendorId>com.YOUR COMPANY NAME</VendorId>
+    <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
+  </AddIn>
+</RevitAddIns>
