@@ -24,44 +24,20 @@
         }
 
         #region Views
-
-        internal static List<View> GetAllViews(Document curDoc)
-        {
-            {
-                FilteredElementCollector m_colviews = new FilteredElementCollector(curDoc);
-                m_colviews.OfCategory(BuiltInCategory.OST_Views);
-
-                List<View> m_views = new List<View>();
-                foreach (View x in m_colviews.ToElements())
-                {
-                    if (x.IsTemplate == false)
-
-                        m_views.Add(x);
-                }
-
-                return m_views;
-            }
-        }
-
-        internal static List<View> GetAllViewsByNameContains(Document curDoc, string v)
-        {
-            throw new NotImplementedException();
-        }
-
-        internal static List<View> GetAllViewsByNameContains(Document curDoc, string v1, string v2)
-        {
-            throw new NotImplementedException();
-        }
-
+        
         public static List<View> GetAllNonTemplateViews(Document curDoc)
         {
-            FilteredElementCollector m_colviews = new FilteredElementCollector(curDoc);
-            m_colviews.OfCategory(BuiltInCategory.OST_Views);
+            FilteredElementCollector m_colviews = new FilteredElementCollector(curDoc)
+                .OfCategory(BuiltInCategory.OST_Views);
 
             List<View> m_returnViews = new List<View>();
             foreach (View curView in m_colviews.ToElements())
             {
-                m_returnViews.Add(curView);
+                // only add views that are not templates
+                if (!curView.IsTemplate)
+                {
+                    m_returnViews.Add(curView);
+                }
             }
 
             return m_returnViews;
@@ -134,30 +110,33 @@
 
         public static List<View> GetAllViewTemplates(Document curDoc)
         {
-            List<View> returnList = new List<View>();
-            List<View> viewList = GetAllNonTemplateViews(curDoc);
+            List<View> m_returnList = new List<View>();
 
-            //loop through views and check if is view template
-            foreach (View v in viewList)
+            // get all views
+            FilteredElementCollector viewCollector = new FilteredElementCollector(curDoc)
+                .OfClass(typeof(View));
+
+            // loop through views and check if view is template
+            foreach (View v in viewCollector)
             {
                 if (v.IsTemplate == true)
                 {
-                    //add view template to list
-                    returnList.Add(v);
+                    // add view template to list
+                    m_returnList.Add(v);
                 }
             }
 
-            return returnList;
+            return m_returnList;
         }
 
         public static List<string> GetAllViewTemplateNames(Document m_doc)
         {
-            //returns list of view templates
+            // returns list of view templates
             List<string> viewTempList = new List<string>();
             List<View> viewList = new List<View>();
             viewList = GetAllNonTemplateViews(m_doc);
 
-            //loop through views and check if is view template
+            // loop through views and check if view is template
             foreach (View v in viewList)
             {
                 if (v.IsTemplate == true)
