@@ -126,15 +126,11 @@ namespace SandBox
 
                                 curView.ViewTemplateId = newViewTemp.Id;
                             }
-                            else if (curView.ViewType == ViewType.Elevation && (curView.Category.Equals("02:Elevations") || curView.Category.Equals("02:Exterior Elevations")))
+                            else if (curView.Category.Equals("02:Elevations") || curView.Category.Equals("02:Exterior Elevations"))
                             {
-                                // Look for an elevation template specifically
-                                newViewTemp = Utils.GetViewTemplateByViewType(curDoc, ViewType.Elevation, "03:Exterior Elevations");
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "03:Exterior Elevations");
 
-                                if (newViewTemp != null)
-                                {
-                                    curView.ViewTemplateId = newViewTemp.Id;
-                                }
+                                curView.ViewTemplateId = newViewTemp.Id;
                             }
                             else if (curView.Category.Equals("03:Roof Plans"))
                             {
