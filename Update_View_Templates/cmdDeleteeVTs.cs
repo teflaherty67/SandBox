@@ -138,6 +138,13 @@ namespace SandBox
                     // get all the views in the project
                     List<View> nonTemplateViews = Utils.GetAllNonTemplateViews(curDoc);
 
+                    // Sort to match Project Browser order
+                    nonTemplateViews = nonTemplateViews
+                        .OrderBy(v => v.Category.Name)           // Group by Category
+                        .ThenBy(v => v.ViewType.ToString())    // Then by Family and Type                         
+                        .ThenBy(v => v.Title)                     // Sort by View Title (Ascending)
+                        .ToList();
+
                     // get all the new view templates in the project
                     List<View> newVTs = Utils.GetAllViewTemplates(curDoc);
 
@@ -151,31 +158,31 @@ namespace SandBox
                         // assign the appropriate view template
                         if (curView.Name.IndexOf("Annotation", StringComparison.Ordinal) >= 0)
                         {
-                            newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Annotations");
+                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Floor Annotations");
 
                             curView.ViewTemplateId = newViewTemp.Id;
                         }
                         else if (curView.Name.IndexOf("Dimension", StringComparison.Ordinal) >= 0)
                         {
-                            newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Dimensions");
+                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Floor Dimensions");
 
                             curView.ViewTemplateId = newViewTemp.Id;
                         }
-                        else if (curView.Category.Equals("02: Elevations") || curView.Category.Equals("02: Exterior Elevations"))
+                        else if (curView.Category.Equals("02:Elevations") || curView.Category.Equals("02:Exterior Elevations"))
                         {
-                            newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "03:Exterior Elevations");
+                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "03:Exterior Elevations");
 
                             curView.ViewTemplateId = newViewTemp.Id;
                         }
-                        else if (curView.Name.IndexOf("Roof", StringComparison.Ordinal) >= 0)
+                        else if (curView.Category.Equals("03:Roof Plans"))
                         {
-                            newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Roof");
+                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "04:Roof Plans");
 
                             curView.ViewTemplateId = newViewTemp.Id;
                         }
                         else if (curView.Category.Equals("04:Sections"))
                         {
-                            newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "04:Sections");
+                            newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "05:Sections");
 
                             curView.ViewTemplateId = newViewTemp.Id;
                         }

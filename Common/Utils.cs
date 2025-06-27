@@ -27,20 +27,11 @@
         
         public static List<View> GetAllNonTemplateViews(Document curDoc)
         {
-            FilteredElementCollector m_colviews = new FilteredElementCollector(curDoc)
-                .OfCategory(BuiltInCategory.OST_Views);
-
-            List<View> m_returnViews = new List<View>();
-            foreach (View curView in m_colviews.ToElements())
-            {
-                // only add views that are not templates
-                if (!curView.IsTemplate)
-                {
-                    m_returnViews.Add(curView);
-                }
-            }
-
-            return m_returnViews;
+            return new FilteredElementCollector(curDoc)
+                .OfCategory(BuiltInCategory.OST_Views)
+                .Cast<View>()
+                .Where(v => !v.IsTemplate && v.ViewType != ViewType.Legend)
+                .ToList();
         }
 
         #endregion
@@ -149,15 +140,15 @@
             return viewTempList;
         }
 
-        public static View GetViewTemplateByName(Document curDoc, string viewTemplateName)
+        public static View GetViewTemplateByName(Document curDoc, string nameViewTemplate)
         {
             List<View> viewTemplateList = GetAllViewTemplates(curDoc);
 
-            foreach (View v in viewTemplateList)
+            foreach (View curVT in viewTemplateList)
             {
-                if (v.Name == viewTemplateName)
+                if (curVT.Name == nameViewTemplate)
                 {
-                    return v;
+                    return curVT;
                 }
             }
 
