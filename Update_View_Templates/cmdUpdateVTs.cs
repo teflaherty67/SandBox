@@ -15,10 +15,7 @@ namespace SandBox
             Document curDoc = uidoc.Document;
 
             // get all the view templates in the project
-            List<View> curVTs = Utils.GetAllViewTemplates(curDoc);
-
-            // get all the views in the project
-            List<View> nonTemplateViews = Utils.GetAllNonTemplateViews(curDoc);
+            List<View> curVTs = Utils.GetAllViewTemplates(curDoc);            
 
             // set the path to the view template file
             string templateDoc = "S:\\Shared Folders\\Lifestyle USA Design\\Library 2025\\Template\\View Templates.rvt";
@@ -97,52 +94,63 @@ namespace SandBox
 
                         t.Commit();
 
-                        #endregion
-
-                        // create a variable for the new view template
-                        View newViewTemp = null;
+                        #endregion                        
 
                         #region Assign View Templates
 
                         // start the 3rd transaction
+
+                        // get all the views in the project
+                        List<View> nonTemplateViews = Utils.GetAllNonTemplateViews(curDoc);
+
+                        // get all the new view templates in the project
+                        List<View> newVTs = Utils.GetAllViewTemplates(curDoc);
+
+                        // create a variable for the new view template
+                        View newViewTemp = null;
+
                         t.Start("Assign View Teamplates");
 
                         foreach (View curView in nonTemplateViews)
-                        {
+                        {                            
                             // assign the appropriate view template
                             if (curView.Name.IndexOf("Annotation", StringComparison.Ordinal) >= 0)
                             {
-                                newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Annotations");
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Floor Annotations");
 
                                 curView.ViewTemplateId = newViewTemp.Id;
                             }
-                            else if (curView.Name.IndexOf("Dimensions", StringComparison.Ordinal) >= 0)
+                            else if (curView.Name.IndexOf("Dimension", StringComparison.Ordinal) >= 0)
                             {
-                                newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Dimensions");
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Floor Dimensions");
 
                                 curView.ViewTemplateId = newViewTemp.Id;
                             }
-                            else if (curView.Category.Equals("02:Exterior Elevations"))
+                            else if (curView.ViewType == ViewType.Elevation && (curView.Category.Equals("02:Elevations") || curView.Category.Equals("02:Exterior Elevations")))
                             {
-                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "02:Exterior Elevations");
+                                // Look for an elevation template specifically
+                                newViewTemp = Utils.GetViewTemplateByViewType(curDoc, ViewType.Elevation, "03:Exterior Elevations");
 
-                                curView.ViewTemplateId = newViewTemp.Id;
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                }
                             }
-                            else if (curView.Name.IndexOf("Roof", StringComparison.Ordinal) >= 0)
+                            else if (curView.Category.Equals("03:Roof Plans"))
                             {
-                                newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Roof");
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "04:Roof Plans");
 
                                 curView.ViewTemplateId = newViewTemp.Id;
                             }
                             else if (curView.Category.Equals("04:Sections"))
                             {
-                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "04:Sections");
+                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "05:Sections");
 
                                 curView.ViewTemplateId = newViewTemp.Id;
                             }
                             else if (curView.Category.Equals("05:Interior Elevations"))
                             {
-                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "05:Interior Elevations");
+                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "0:Interior Elevations");
 
                                 curView.ViewTemplateId = newViewTemp.Id;
                             }

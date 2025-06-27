@@ -195,6 +195,17 @@
             return null;
         }
 
+        internal static View GetViewTemplateByViewType(Document curDoc, ViewType viewType, string categoryName)
+        {
+            List<View> m_colVTs = Utils.GetAllViewTemplates(curDoc);
+            foreach (View curVT in m_colVTs)
+            {
+                if (curVT.ViewType == viewType && curVT.Category.Name.Equals(categoryName))
+                    return curVT;
+            }
+            return null;
+        }
+
         #endregion
     }
 }
