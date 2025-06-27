@@ -155,17 +155,36 @@ namespace SandBox
 
                             curView.ViewTemplateId = newViewTemp.Id;
                         }
-                        else if (curView.Name.IndexOf("Dimensions", StringComparison.Ordinal) >= 0)
+                        else if (curView.Name.IndexOf("Dimension", StringComparison.Ordinal) >= 0)
                         {
                             newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Dimensions");
 
                             curView.ViewTemplateId = newViewTemp.Id;
                         }
-                        else if (curView.Category.Equals("02:Exterior Elevations"))
+                        else if (curView.Category.Equals("02:Elevations") || curView.Category.Equals("02:Exterior Elevations"))
                         {
-                            newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "02:Exterior Elevations");
+                            System.Diagnostics.Debug.WriteLine($"Found elevation view: {curView.Name}, Category: '{curView.Category}'");
 
-                            curView.ViewTemplateId = newViewTemp.Id;
+                            newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "03:Exterior Elevations");
+
+                            if (newViewTemp != null)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Found template: {newViewTemp.Name}");
+                                curView.ViewTemplateId = newViewTemp.Id;
+                                System.Diagnostics.Debug.WriteLine("Template assigned successfully");
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.WriteLine("ERROR: Could not find '03:Exterior Elevations' template");
+
+                                // Let's see what templates ARE available
+                                List<View> allTemplates = Utils.GetAllViewTemplates(curDoc);
+                                System.Diagnostics.Debug.WriteLine("Available templates:");
+                                foreach (View template in allTemplates)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"- '{template.Name}'");
+                                }
+                            }
                         }
                         else if (curView.Name.IndexOf("Roof", StringComparison.Ordinal) >= 0)
                         {
