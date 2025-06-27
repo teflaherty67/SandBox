@@ -115,7 +115,7 @@ namespace SandBox
 
                             if (existingTemplate == null)
                             {
-                                ElementId newTemplateID = Utils.ImportViewTemplates(sourceDoc, sourceTemplate, targetDoc);
+                                ElementId newTemplateID = Utils.ImportViewTemplates(sourceDoc, sourceTemplate, targetDoc);                                
                             }
                             else
                             {

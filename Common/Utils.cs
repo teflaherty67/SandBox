@@ -1,4 +1,5 @@
-﻿namespace SandBox.Common
+﻿
+namespace SandBox.Common
 {
     internal static class Utils
     {
@@ -204,6 +205,18 @@
                     return curVT;
             }
             return null;
+        }
+
+        internal static string GetViewCategoryParameter(View curView)
+        {
+            foreach (Parameter param in curView.Parameters)
+            {
+                if (param.Definition.Name == "Category" && param.HasValue && !string.IsNullOrEmpty(param.AsString()))
+                {
+                    return param.AsString();
+                }
+            }
+            return "";
         }
 
         #endregion
