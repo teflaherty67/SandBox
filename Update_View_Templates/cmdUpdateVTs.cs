@@ -180,13 +180,12 @@ namespace SandBox
 
                                 curView.ViewTemplateId = newViewTemp.Id;
                             }
-                            else if (curView.Category.Equals("12:Attic Areas"))
+                            else if (curView.Name.IndexOf("Presentation_1", StringComparison.Ordinal) >= 0 || (curView.Name.IndexOf("Presentation_2", StringComparison.Ordinal) >= 0))
                             {
-                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "12:Attic Areas");
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "13-Floor Presentation");
 
                                 curView.ViewTemplateId = newViewTemp.Id;
                             }
-
                         }
 
                         // commit the 3rd transaction
