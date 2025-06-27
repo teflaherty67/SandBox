@@ -161,7 +161,7 @@ namespace SandBox
 
                             curView.ViewTemplateId = newViewTemp.Id;
                         }
-                       else if (curView.Category.Name.Contains("02") && curView.Category.Name.Contains("Elevation"))
+                        else if (curView.Category.Equals("02: Elevations") || curView.Category.Equals("02: Exterior Elevations"))
                         {
                             newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "03:Exterior Elevations");
 
