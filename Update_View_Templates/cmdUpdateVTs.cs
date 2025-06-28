@@ -151,6 +151,16 @@ namespace SandBox
                                     viewsUpdated++; // increment the counter
                                 }
                             }
+                            else if (curView.Name.IndexOf("Key Plan", StringComparison.Ordinal) >= 0)
+                            {
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Key Plans");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
                             else if (curView.Category.Equals("02:Elevations") || curView.Category.Equals("02:Exterior Elevations"))
                             {
                                 newViewTemp = Utils.GetViewTemplateByName(curDoc, "03:Exterior Elevations");

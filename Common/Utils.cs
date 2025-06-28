@@ -196,27 +196,15 @@ namespace SandBox.Common
             return null;
         }
 
-        internal static View GetViewTemplateByViewType(Document curDoc, ViewType viewType, string categoryName)
+        internal static List<View> GetViewsWithoutTemplates(Document curDoc)
         {
-            List<View> m_colVTs = Utils.GetAllViewTemplates(curDoc);
-            foreach (View curVT in m_colVTs)
-            {
-                if (curVT.ViewType == viewType && curVT.Category.Name.Equals(categoryName))
-                    return curVT;
-            }
-            return null;
-        }
-
-        internal static string GetViewCategoryParameter(View curView)
-        {
-            foreach (Parameter param in curView.Parameters)
-            {
-                if (param.Definition.Name == "Category" && param.HasValue && !string.IsNullOrEmpty(param.AsString()))
-                {
-                    return param.AsString();
-                }
-            }
-            return "";
+            return new FilteredElementCollector(curDoc)
+                .OfCategory(BuiltInCategory.OST_Views)
+                .Cast<View>()
+                .Where(v => !v.IsTemplate &&
+                           v.ViewType != ViewType.Legend &&
+                           v.ViewTemplateId == ElementId.InvalidElementId)
+                .ToList();
         }
 
         #endregion

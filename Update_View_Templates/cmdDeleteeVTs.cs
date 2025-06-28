@@ -23,6 +23,7 @@ namespace SandBox
             // create counter variables for final report
             int templatesImported = 0;
             int viewsUpdated = 0;
+            int totalViews = 0;
 
             // set the path to the view template file
             string templateDoc = "S:\\Shared Folders\\Lifestyle USA Design\\Library 2025\\Template\\View Templates.rvt";
@@ -54,21 +55,31 @@ namespace SandBox
                             // get the name of the view template
                             string curName = curVT.Name;
 
-                            // check if first character is letter
-                            bool isLetter = !String.IsNullOrEmpty(curName) && Char.IsLetter(curName[0]);
-
-                            // check if first two charactera is number                    
-                            bool isNumber = !String.IsNullOrEmpty(curName) && Char.IsNumber(curName[0]);
-
-                            // if yes, delete it
-                            if (isLetter == true || isNumber == true)
+                            // check view template name for deletion criteria
+                            if (!string.IsNullOrEmpty(curName))
                             {
-                                try
+                                // check if first character is letter
+                                bool isLetter = Char.IsLetter(curName[0]);
+
+                                // check if starts with 01, 02, 03, 04, 05, 06, or 07                    
+                                bool isTargetNumber = curName.StartsWith("01") ||
+                                                      curName.StartsWith("02") ||
+                                                      curName.StartsWith("03") ||
+                                                      curName.StartsWith("04") ||
+                                                      curName.StartsWith("05") ||
+                                                      curName.StartsWith("06") ||
+                                                      curName.StartsWith("07");
+
+                                // if yes, delete it
+                                if (isLetter == true || isTargetNumber == true)
                                 {
-                                    curDoc.Delete(curVT.Id);
-                                }
-                                catch (Exception)
-                                {
+                                    try
+                                    {
+                                        curDoc.Delete(curVT.Id);
+                                    }
+                                    catch (Exception)
+                                    {
+                                    }
                                 }
                             }
                         }
@@ -125,10 +136,14 @@ namespace SandBox
                         // create a variable for the new view template
                         View newViewTemp = null;
 
+                        // Get views without templates and set totalViews
+                        List<View> viewsWithoutTemplates = Utils.GetViewsWithoutTemplates(curDoc);
+                        totalViews = viewsWithoutTemplates.Count; // This updates the outside variable
+
                         // start the 3rd transaction 
                         t.Start("Assign View Teamplates");
 
-                        foreach (View curView in nonTemplateViews)
+                        foreach (View curView in viewsWithoutTemplates)
                         {
                             // assign the appropriate view template
                             if (curView.Name.IndexOf("Annotation", StringComparison.Ordinal) >= 0)
@@ -151,14 +166,63 @@ namespace SandBox
                                     viewsUpdated++; // increment the counter
                                 }
                             }
-                            else if (curView.Category.Equals("02:Elevations") || curView.Category.Equals("02:Exterior Elevations"))
+                            else if (curView.Name.IndexOf("Key Plan", StringComparison.Ordinal) >= 0)
                             {
-                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "03:Exterior Elevations");
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Key Plans");
 
                                 if (newViewTemp != null)
                                 {
                                     curView.ViewTemplateId = newViewTemp.Id;
                                     viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Name.IndexOf("Enlarged", StringComparison.Ordinal) >= 0)
+                            {
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Enlarged Plans");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            // Key Elevations - check for "Key" first (most specific)
+                            else if (curView.Name.IndexOf("Key", StringComparison.Ordinal) >= 0 &&
+                                     curView.Name.IndexOf("Porch", StringComparison.Ordinal) < 0)
+                            {
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "03-Key Elevations");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++;
+                                }
+                            }
+                            // Porch Elevations (Interior) - check for "Porch"
+                            else if (curView.Name.IndexOf("Porch", StringComparison.Ordinal) >= 0)
+                            {
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "03-Porch Elevations");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++;
+                                }
+                            }
+                            // Exterior Elevations - directional words but NOT "Key" or "Porch"
+                            else if ((curView.Name.IndexOf("Front", StringComparison.Ordinal) >= 0 ||
+                                      curView.Name.IndexOf("Left", StringComparison.Ordinal) >= 0 ||
+                                      curView.Name.IndexOf("Rear", StringComparison.Ordinal) >= 0 ||
+                                      curView.Name.IndexOf("Right", StringComparison.Ordinal) >= 0) &&
+                                      curView.Name.IndexOf("Key", StringComparison.Ordinal) < 0 &&
+                                      curView.Name.IndexOf("Porch", StringComparison.Ordinal) < 0)
+                            {
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "03-Exterior Elevations");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++;
                                 }
                             }
                             else if (curView.Category.Equals("03:Roof Plans"))
@@ -204,46 +268,6 @@ namespace SandBox
                             else if (curView.Name.IndexOf("Form", StringComparison.Ordinal) >= 0)
                             {
                                 newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Form");
-
-                                if (newViewTemp != null)
-                                {
-                                    curView.ViewTemplateId = newViewTemp.Id;
-                                    viewsUpdated++; // increment the counter
-                                }
-                            }
-                            else if (curView.Category.Equals("10:Floor Areas"))
-                            {
-                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "10:Floor Areas");
-
-                                if (newViewTemp != null)
-                                {
-                                    curView.ViewTemplateId = newViewTemp.Id;
-                                    viewsUpdated++; // increment the counter
-                                }
-                            }
-                            else if (curView.Category.Equals("11:Frame Areas"))
-                            {
-                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "11:Frame Areas");
-
-                                if (newViewTemp != null)
-                                {
-                                    curView.ViewTemplateId = newViewTemp.Id;
-                                    viewsUpdated++; // increment the counter
-                                }
-                            }
-                            else if (curView.Category.Equals("12:Attic Areas"))
-                            {
-                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "12:Attic Areas");
-
-                                if (newViewTemp != null)
-                                {
-                                    curView.ViewTemplateId = newViewTemp.Id;
-                                    viewsUpdated++; // increment the counter
-                                }
-                            }
-                            else if (curView.Name.IndexOf("Presentation_1", StringComparison.Ordinal) >= 0 || (curView.Name.IndexOf("Presentation_2", StringComparison.Ordinal) >= 0))
-                            {
-                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "13-Floor Presentation");
 
                                 if (newViewTemp != null)
                                 {
