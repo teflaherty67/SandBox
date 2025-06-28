@@ -15,7 +15,14 @@ namespace SandBox
             Document curDoc = uidoc.Document;
 
             // get all the view templates in the project
-            List<View> curVTs = Utils.GetAllViewTemplates(curDoc);            
+            List<View> curVTs = Utils.GetAllViewTemplates(curDoc);
+
+            // get all the views in the project
+            List<View> nonTemplateViews = Utils.GetAllNonTemplateViews(curDoc);
+
+            // create counter variables for final report
+            int templatesImported = 0;
+            int viewsUpdated = 0;
 
             // set the path to the view template file
             string templateDoc = "S:\\Shared Folders\\Lifestyle USA Design\\Library 2025\\Template\\View Templates.rvt";
@@ -66,24 +73,6 @@ namespace SandBox
                             }
                         }
 
-                        // get old frame areas schedule template
-                        ViewSchedule frameSchedule = new FilteredElementCollector(curDoc)
-                            .OfClass(typeof(ViewSchedule))
-                            .Cast<ViewSchedule>()
-                            .FirstOrDefault(s => s.Name.Equals("-Frame Areas-"));
-
-                        // delete old frame areas schedule template
-                        if (frameSchedule != null)
-                        {
-                            try
-                            {
-                                curDoc.Delete(frameSchedule.Id);
-                            }
-                            catch (Exception)
-                            {
-                            }
-                        }
-
                         // commit the 1st transaction
                         t.Commit();
 
@@ -102,9 +91,9 @@ namespace SandBox
                         #region Transfer View Templates
 
                         // start the 2nd transaction
-                        t.Start("Transfer View Templates");
+                        t.Start("Transfer View Teamplates");
 
-                        // transfer the view templates from the source document
+                        // transfer the vew templates from the source document
                         foreach (View sourceTemplate in listViewTemplates)
                         {
                             // check if template with exact same name already exists
@@ -115,7 +104,8 @@ namespace SandBox
 
                             if (existingTemplate == null)
                             {
-                                ElementId newTemplateID = Utils.ImportViewTemplates(sourceDoc, sourceTemplate, targetDoc);                                
+                                ElementId newTemplateID = Utils.ImportViewTemplates(sourceDoc, sourceTemplate, targetDoc);
+                                templatesImported++; // increment the counter
                             }
                             else
                             {
@@ -125,109 +115,151 @@ namespace SandBox
 
                         t.Commit();
 
-                        #endregion               
+                        #endregion                        
+
+                        #region Assign View Templates                                               
+
+                        // get all the new view templates in the project
+                        List<View> newVTs = Utils.GetAllViewTemplates(curDoc);
+
+                        // create a variable for the new view template
+                        View newViewTemp = null;
+
+                        // start the 3rd transaction 
+                        t.Start("Assign View Teamplates");
+
+                        foreach (View curView in nonTemplateViews)
+                        {
+                            // assign the appropriate view template
+                            if (curView.Name.IndexOf("Annotation", StringComparison.Ordinal) >= 0)
+                            {
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Floor Annotations");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Name.IndexOf("Dimension", StringComparison.Ordinal) >= 0)
+                            {
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Floor Dimensions");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Category.Equals("02:Elevations") || curView.Category.Equals("02:Exterior Elevations"))
+                            {
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "03:Exterior Elevations");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Category.Equals("03:Roof Plans"))
+                            {
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "04:Roof Plans");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Category.Equals("04:Sections"))
+                            {
+                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "05:Sections");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Category.Equals("05:Interior Elevations"))
+                            {
+                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "0:Interior Elevations");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Name.IndexOf("Electrical", StringComparison.Ordinal) >= 0)
+                            {
+                                newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Electrical");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Name.IndexOf("Form", StringComparison.Ordinal) >= 0)
+                            {
+                                newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Form");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Category.Equals("10:Floor Areas"))
+                            {
+                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "10:Floor Areas");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Category.Equals("11:Frame Areas"))
+                            {
+                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "11:Frame Areas");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Category.Equals("12:Attic Areas"))
+                            {
+                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "12:Attic Areas");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                            else if (curView.Name.IndexOf("Presentation_1", StringComparison.Ordinal) >= 0 || (curView.Name.IndexOf("Presentation_2", StringComparison.Ordinal) >= 0))
+                            {
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "13-Floor Presentation");
+
+                                if (newViewTemp != null)
+                                {
+                                    curView.ViewTemplateId = newViewTemp.Id;
+                                    viewsUpdated++; // increment the counter
+                                }
+                            }
+                        }
+
+                        // commit the 3rd transaction
+                        t.Commit();
+
+                        #endregion
 
                         tGroup.Assimilate();
                     }
-                }
-
-                using(Transaction tx = new Transaction(curDoc))
-                {
-                    tx.Start("Assign View Templates");
-
-                    // get all the views in the project
-                    List<View> nonTemplateViews = Utils.GetAllNonTemplateViews(curDoc);
-
-                    // Sort to match Project Browser order
-                    nonTemplateViews = nonTemplateViews
-                        .OrderBy(v => v.Category.Name)           // Group by Category
-                        .ThenBy(v => v.ViewType.ToString())    // Then by Family and Type                         
-                        .ThenBy(v => v.Title)                     // Sort by View Title (Ascending)
-                        .ToList();
-
-                    // get all the new view templates in the project
-                    List<View> newVTs = Utils.GetAllViewTemplates(curDoc);
-
-                    // create a variable for the new view template
-                    View newViewTemp = null;
-
-                    #region Assign View Templates
-
-                    foreach (View curView in nonTemplateViews)
-                    {
-                        // assign the appropriate view template
-                        if (curView.Name.IndexOf("Annotation", StringComparison.Ordinal) >= 0)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Floor Annotations");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                        else if (curView.Name.IndexOf("Dimension", StringComparison.Ordinal) >= 0)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Floor Dimensions");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                        else if (curView.Category.Equals("02:Elevations") || curView.Category.Equals("02:Exterior Elevations"))
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "03:Exterior Elevations");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                        else if (curView.Category.Equals("03:Roof Plans"))
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "04:Roof Plans");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                        else if (curView.Category.Equals("04:Sections"))
-                        {
-                            newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "05:Sections");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                        else if (curView.Category.Equals("05:Interior Elevations"))
-                        {
-                            newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "05:Interior Elevations");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                        else if (curView.Name.IndexOf("Electrical", StringComparison.Ordinal) >= 0)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Electrical");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                        else if (curView.Name.IndexOf("Form", StringComparison.Ordinal) >= 0)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByNameContains(curDoc, "Form");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                        else if (curView.Category.Equals("10:Floor Areas"))
-                        {
-                            newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "10:Floor Areas");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                        else if (curView.Category.Equals("11:Frame Areas"))
-                        {
-                            newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "11:Frame Areas");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                        else if (curView.Category.Equals("12:Attic Areas"))
-                        {
-                            newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "12:Attic Areas");
-
-                            curView.ViewTemplateId = newViewTemp.Id;
-                        }
-                    }
-
-                    // commit the transaction
-                    tx.Commit();
-
-                    #endregion
                 }
             }
 
@@ -238,7 +270,11 @@ namespace SandBox
                 {
                     sourceDoc.Close(false); // false = don't save
                 }
-            }                
+            }
+
+            // Show final report
+            string report = $"Existing view templates have been deleted, {templatesImported} new view templates were added to the project and assigned to {viewsUpdated} out of {nonTemplateViews.Count} views.";
+            TaskDialog.Show("View Template Update Complete", report);
 
             return Result.Succeeded;
         }
