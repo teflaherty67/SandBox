@@ -1,4 +1,5 @@
 ﻿
+
 namespace SandBox.Common
 {
     internal static class Utils
@@ -32,6 +33,20 @@ namespace SandBox.Common
                 .OfCategory(BuiltInCategory.OST_Views)
                 .Cast<View>()
                 .Where(v => !v.IsTemplate && v.ViewType != ViewType.Legend)
+                .ToList();
+        }
+
+        internal static List<View> GetViewsByViewTemplateName(Document curDoc, string templateName)
+        {
+            // Find the template by name
+            View template = Utils.GetViewTemplateByName(curDoc, templateName);
+            if (template == null) return new List<View>();
+
+            // Find all views that currently use this template
+            return new FilteredElementCollector(curDoc)
+                .OfCategory(BuiltInCategory.OST_Views)
+                .Cast<View>()
+                .Where(v => !v.IsTemplate && v.ViewTemplateId == template.Id)
                 .ToList();
         }
 
@@ -206,6 +221,8 @@ namespace SandBox.Common
                            v.ViewTemplateId == ElementId.InvalidElementId)
                 .ToList();
         }
+
+        
 
         #endregion
     }
