@@ -187,8 +187,9 @@ namespace SandBox
                                 }
                             }
                             // Key Elevations - check for "Key" first (most specific)
-                            else if (curView.Name.IndexOf("Key", StringComparison.Ordinal) >= 0 &&
-                                     curView.Name.IndexOf("Porch", StringComparison.Ordinal) < 0)
+                            else if (curView.ViewType == ViewType.Elevation &&
+                                    curView.Name.IndexOf("Key", StringComparison.Ordinal) >= 0 &&
+                                    curView.Name.IndexOf("Porch", StringComparison.Ordinal) < 0)
                             {
                                 newViewTemp = Utils.GetViewTemplateByName(curDoc, "03-Key Elevations");
 
@@ -199,7 +200,8 @@ namespace SandBox
                                 }
                             }
                             // Porch Elevations (Interior) - check for "Porch"
-                            else if (curView.Name.IndexOf("Porch", StringComparison.Ordinal) >= 0)
+                            else if (curView.ViewType == ViewType.Elevation &&
+                                    curView.Name.IndexOf("Porch", StringComparison.Ordinal) >= 0)
                             {
                                 newViewTemp = Utils.GetViewTemplateByName(curDoc, "03-Porch Elevations");
 
@@ -210,12 +212,13 @@ namespace SandBox
                                 }
                             }
                             // Exterior Elevations - directional words but NOT "Key" or "Porch"
-                            else if ((curView.Name.IndexOf("Front", StringComparison.Ordinal) >= 0 ||
-                                      curView.Name.IndexOf("Left", StringComparison.Ordinal) >= 0 ||
-                                      curView.Name.IndexOf("Rear", StringComparison.Ordinal) >= 0 ||
-                                      curView.Name.IndexOf("Right", StringComparison.Ordinal) >= 0) &&
-                                      curView.Name.IndexOf("Key", StringComparison.Ordinal) < 0 &&
-                                      curView.Name.IndexOf("Porch", StringComparison.Ordinal) < 0)
+                            else if (curView.ViewType == ViewType.Elevation &&
+                             (curView.Name.IndexOf("Front", StringComparison.Ordinal) >= 0 ||
+                              curView.Name.IndexOf("Left", StringComparison.Ordinal) >= 0 ||
+                              curView.Name.IndexOf("Rear", StringComparison.Ordinal) >= 0 ||
+                              curView.Name.IndexOf("Right", StringComparison.Ordinal) >= 0) &&
+                              curView.Name.IndexOf("Key", StringComparison.Ordinal) < 0 &&
+                              curView.Name.IndexOf("Porch", StringComparison.Ordinal) < 0)
                             {
                                 newViewTemp = Utils.GetViewTemplateByName(curDoc, "03-Exterior Elevations");
 
@@ -225,9 +228,9 @@ namespace SandBox
                                     viewsUpdated++;
                                 }
                             }
-                            else if (curView.Category.Equals("03:Roof Plans"))
+                            else if (curView.Name.IndexOf("Roof", StringComparison.Ordinal) >= 0)
                             {
-                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "04:Roof Plans");
+                                newViewTemp = Utils.GetViewTemplateByName(curDoc, "04-Roof Plans");
 
                                 if (newViewTemp != null)
                                 {
@@ -237,7 +240,7 @@ namespace SandBox
                             }
                             else if (curView.Category.Equals("04:Sections"))
                             {
-                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "05:Sections");
+                                newViewTemp = Utils.GetViewTemplateByCategoryEquals(curDoc, "05-Sections");
 
                                 if (newViewTemp != null)
                                 {
@@ -297,7 +300,7 @@ namespace SandBox
             }
 
             // Show final report
-            string report = $"Existing view templates have been deleted, {templatesImported} new view templates were added to the project and assigned to {viewsUpdated} out of {nonTemplateViews.Count} views.";
+            string report = $"Existing view templates have been deleted, {templatesImported} new view templates were added to the project and assigned to {viewsUpdated} out of {totalViews} views.";
             TaskDialog.Show("View Template Update Complete", report);
 
             return Result.Succeeded;
