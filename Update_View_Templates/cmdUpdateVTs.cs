@@ -17,41 +17,32 @@ namespace SandBox
             // get all the view templates in the project
             List<View> curVTs = Utils.GetAllViewTemplates(curDoc);
 
-            // get views by current view template name
-            List<View> viewsEnlargedPlans = Utils.GetViewsByViewTemplateName(curDoc, "01-Enlarged Plans");
-            List<View> viewsAnnoPlans = Utils.GetViewsByViewTemplateName(curDoc, "01-Floor Annotations");
-            List<View> viewsDimPlans = Utils.GetViewsByViewTemplateName(curDoc, "01-Floor Dimensions");
-            List<View> viewsKeyPlans = Utils.GetViewsByViewTemplateName(curDoc, "01-Key Plans");
-            List<View> viewsExtrElevs = Utils.GetViewsByViewTemplateName(curDoc, "02-Elevations");
-            List<View> viewsKeyElevs = Utils.GetViewsByViewTemplateName(curDoc, "02-Key Elevations");
-            List<View> viewsPorchElevs = Utils.GetViewsByViewTemplateName(curDoc, "02-Porch Elevations");
-            List<View> viewsRoofPlans = Utils.GetViewsByViewTemplateName(curDoc, "03-Roof Plan");
-            List<View> viewsSections = Utils.GetViewsByViewTemplateName(curDoc, "04-Sections");
-            List<View> viewsSections3_8 = Utils.GetViewsByViewTemplateName(curDoc, "04-Sections_3/8\"");
-            List<View> viewsCabinetPlans = Utils.GetViewsByViewTemplateName(curDoc, "05-Cabinet Layout Plans");
-            List<View> viewsIntrElevs = Utils.GetViewsByViewTemplateName(curDoc, "05-Interior Elevations");
-            List<View> viewsElecPlans = Utils.GetViewsByViewTemplateName(curDoc, "06-Electrical Plans");
-            List<View> viewsEnlargedFormPlans = Utils.GetViewsByViewTemplateName(curDoc, "07-Enlarged Form/Foundation Plans");
-            List<View> viewsFormPlans = Utils.GetViewsByViewTemplateName(curDoc, "07-Form/Foundation Plans");
+            // get views by current view template name and store in dictionary
+            Dictionary<string, List<View>> viewsByTemplate = new Dictionary<string, List<View>>
+            {
+                {"01-Enlarged Plans", Utils.GetViewsByViewTemplateName(curDoc, "01-Enlarged Plans")},
+                {"01-Floor Annotations", Utils.GetViewsByViewTemplateName(curDoc, "01-Floor Annotations")},
+                {"01-Floor Dimensions", Utils.GetViewsByViewTemplateName(curDoc, "01-Floor Dimensions")},
+                {"01-Key Plans", Utils.GetViewsByViewTemplateName(curDoc, "01-Key Plans")},
+                {"02-Elevations", Utils.GetViewsByViewTemplateName(curDoc, "02-Elevations")},
+                {"02-Key Elevations", Utils.GetViewsByViewTemplateName(curDoc, "02-Key Elevations")},
+                {"02-Porch Elevations", Utils.GetViewsByViewTemplateName(curDoc, "02-Porch Elevations")},
+                {"03-Roof Plan", Utils.GetViewsByViewTemplateName(curDoc, "03-Roof Plan")},
+                {"04-Sections", Utils.GetViewsByViewTemplateName(curDoc, "04-Sections")},
+                {"04-Sections_3/8\"", Utils.GetViewsByViewTemplateName(curDoc, "04-Sections_3/8\"")},
+                {"05-Cabinet Layout Plans", Utils.GetViewsByViewTemplateName(curDoc, "05-Cabinet Layout Plans")},
+                {"05-Interior Elevations", Utils.GetViewsByViewTemplateName(curDoc, "05-Interior Elevations")},
+                {"06-Electrical Plans", Utils.GetViewsByViewTemplateName(curDoc, "06-Electrical Plans")},
+                {"07-Enlarged Form/Foundation Plans", Utils.GetViewsByViewTemplateName(curDoc, "07-Enlarged Form/Foundation Plans")},
+                {"07-Form/Foundation Plans", Utils.GetViewsByViewTemplateName(curDoc, "07-Form/Foundation Plans")}
+            };
 
             // create list of all views getting new view templates
             List<View> allViewsToUpdate = new List<View>();
-
-            allViewsToUpdate.AddRange(viewsEnlargedPlans);
-            allViewsToUpdate.AddRange(viewsAnnoPlans);
-            allViewsToUpdate.AddRange(viewsDimPlans);
-            allViewsToUpdate.AddRange(viewsKeyPlans);
-            allViewsToUpdate.AddRange(viewsExtrElevs);
-            allViewsToUpdate.AddRange(viewsKeyElevs);
-            allViewsToUpdate.AddRange(viewsPorchElevs);
-            allViewsToUpdate.AddRange(viewsRoofPlans);
-            allViewsToUpdate.AddRange(viewsSections);
-            allViewsToUpdate.AddRange(viewsSections3_8);
-            allViewsToUpdate.AddRange(viewsCabinetPlans);
-            allViewsToUpdate.AddRange(viewsIntrElevs);
-            allViewsToUpdate.AddRange(viewsElecPlans);
-            allViewsToUpdate.AddRange(viewsEnlargedFormPlans);
-            allViewsToUpdate.AddRange(viewsFormPlans);
+            foreach (var viewList in viewsByTemplate.Values)
+            {
+                allViewsToUpdate.AddRange(viewList);
+            }
 
             // create counter variables for final report
             int templatesImported = 0;
@@ -168,175 +159,18 @@ namespace SandBox
                         // get all the new view templates in the project
                         List<View> newVTs = Utils.GetAllViewTemplates(curDoc);
 
-                        // create a variable for the new view template
-                        View newViewTemp = null;
+                        // get the template map
+                        var mapVTs = Utils.GetViewTemplateMap();
 
                         // start the 3rd transaction 
                         t.Start("Assign View Teamplates");
 
-                        foreach (View curView in viewsEnlargedPlans)
+                        foreach (var curMap in mapVTs)
                         {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Enlarged Plans");
-
-                            if (newViewTemp != null)
+                            if (viewsByTemplate.ContainsKey(curMap.OldTemplateName))
                             {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsAnnoPlans)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Floor Annotations");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsDimPlans)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Floor Dimensions");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsKeyPlans)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "02-Key Plans");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsExtrElevs)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "03-Exterior Elevations");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++;
-                            }
-
-                        }
-
-                        foreach (View curView in viewsKeyElevs)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "03-Key Elevations");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++;
-                            }
-                        }
-
-                        foreach (View curView in viewsPorchElevs)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "03-Porch Elevations");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++;
-                            }
-                        }
-
-                        foreach (View curView in viewsRoofPlans)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "04-Roof Plans");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsSections)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "05-Sections");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsSections3_8)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "05-Sections_3/8\"");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsCabinetPlans)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "06-Cabinet Layout Plans");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsIntrElevs)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "06-Interior Elevations");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsElecPlans)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "07-Electrical Plans");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsFormPlans)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "01-Form Plans");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
-                            }
-                        }
-
-                        foreach (View curView in viewsEnlargedFormPlans)
-                        {
-                            newViewTemp = Utils.GetViewTemplateByName(curDoc, "01-Enlarged Form Plans");
-
-                            if (newViewTemp != null)
-                            {
-                                curView.ViewTemplateId = newViewTemp.Id;
-                                viewsUpdated++; // increment the counter
+                                var allViews = viewsByTemplate[curMap.OldTemplateName];
+                                Utils.AssignTemplateToView(allViews, curMap.NewTemplateName, curDoc, ref viewsUpdated);
                             }
                         }
 

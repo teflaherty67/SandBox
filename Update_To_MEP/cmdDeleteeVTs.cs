@@ -2,10 +2,10 @@
 using SandBox.Common;
 using System.Linq;
 
-namespace SandBox
+namespace SandBox.Update_To_MEP
 {
     [Transaction(TransactionMode.Manual)]
-    public class cmdDeleteVTs : IExternalCommand
+    public class cmdUpdateToMEP : IExternalCommand
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -17,41 +17,32 @@ namespace SandBox
             // get all the view templates in the project
             List<View> curVTs = Utils.GetAllViewTemplates(curDoc);
 
-            // get views by current view template name
-            List<View> viewsEnlargedPlans = Utils.GetViewsByViewTemplateName(curDoc, "01-Enlarged Plans");
-            List<View> viewsAnnoPlans = Utils.GetViewsByViewTemplateName(curDoc, "01-Floor Annotations");
-            List<View> viewsDimPlans = Utils.GetViewsByViewTemplateName(curDoc, "01-Floor Dimensions");
-            List<View> viewsKeyPlans = Utils.GetViewsByViewTemplateName(curDoc, "01-Key Plans");
-            List<View> viewsExtrElevs = Utils.GetViewsByViewTemplateName(curDoc, "02-Elevations");
-            List<View> viewsKeyElevs = Utils.GetViewsByViewTemplateName(curDoc, "02-Key Elevations");
-            List<View> viewsPorchElevs = Utils.GetViewsByViewTemplateName(curDoc, "02-Porch Elevations");
-            List<View> viewsRoofPlans = Utils.GetViewsByViewTemplateName(curDoc, "03-Roof Plan");
-            List<View> viewsSections = Utils.GetViewsByViewTemplateName(curDoc, "04-Sections");
-            List<View> viewsSections3_8 = Utils.GetViewsByViewTemplateName(curDoc, "04-Sections_3/8\"");
-            List<View> viewsCabinetPlans = Utils.GetViewsByViewTemplateName(curDoc, "05-Cabinet Layout Plans");
-            List<View> viewsIntrElevs = Utils.GetViewsByViewTemplateName(curDoc, "05-Interior Elevations");
-            List<View> viewsElecPlans = Utils.GetViewsByViewTemplateName(curDoc, "06-Electrical Plans");
-            List<View> viewsEnlargedFormPlans = Utils.GetViewsByViewTemplateName(curDoc, "07-Enlarged Form/Foundation Plans");
-            List<View> viewsFormPlans = Utils.GetViewsByViewTemplateName(curDoc, "07-Form/Foundation Plans");
+            // get views by current view template name and store in dictionary
+            Dictionary<string, List<View>> viewsByTemplate = new Dictionary<string, List<View>>
+            {
+                {"01-Enlarged Plans", Utils.GetViewsByViewTemplateName(curDoc, "01-Enlarged Plans")},
+                {"01-Floor Annotations", Utils.GetViewsByViewTemplateName(curDoc, "01-Floor Annotations")},
+                {"01-Floor Dimensions", Utils.GetViewsByViewTemplateName(curDoc, "01-Floor Dimensions")},
+                {"01-Key Plans", Utils.GetViewsByViewTemplateName(curDoc, "01-Key Plans")},
+                {"02-Elevations", Utils.GetViewsByViewTemplateName(curDoc, "02-Elevations")},
+                {"02-Key Elevations", Utils.GetViewsByViewTemplateName(curDoc, "02-Key Elevations")},
+                {"02-Porch Elevations", Utils.GetViewsByViewTemplateName(curDoc, "02-Porch Elevations")},
+                {"03-Roof Plan", Utils.GetViewsByViewTemplateName(curDoc, "03-Roof Plan")},
+                {"04-Sections", Utils.GetViewsByViewTemplateName(curDoc, "04-Sections")},
+                {"04-Sections_3/8\"", Utils.GetViewsByViewTemplateName(curDoc, "04-Sections_3/8\"")},
+                {"05-Cabinet Layout Plans", Utils.GetViewsByViewTemplateName(curDoc, "05-Cabinet Layout Plans")},
+                {"05-Interior Elevations", Utils.GetViewsByViewTemplateName(curDoc, "05-Interior Elevations")},
+                {"06-Electrical Plans", Utils.GetViewsByViewTemplateName(curDoc, "06-Electrical Plans")},
+                {"07-Enlarged Form/Foundation Plans", Utils.GetViewsByViewTemplateName(curDoc, "07-Enlarged Form/Foundation Plans")},
+                {"07-Form/Foundation Plans", Utils.GetViewsByViewTemplateName(curDoc, "07-Form/Foundation Plans")}
+            };
 
             // create list of all views getting new view templates
             List<View> allViewsToUpdate = new List<View>();
-
-            allViewsToUpdate.AddRange(viewsEnlargedPlans);
-            allViewsToUpdate.AddRange(viewsAnnoPlans);
-            allViewsToUpdate.AddRange(viewsDimPlans);
-            allViewsToUpdate.AddRange(viewsKeyPlans);
-            allViewsToUpdate.AddRange(viewsExtrElevs);
-            allViewsToUpdate.AddRange(viewsKeyElevs);
-            allViewsToUpdate.AddRange(viewsPorchElevs);
-            allViewsToUpdate.AddRange(viewsRoofPlans);
-            allViewsToUpdate.AddRange(viewsSections);
-            allViewsToUpdate.AddRange(viewsSections3_8);
-            allViewsToUpdate.AddRange(viewsCabinetPlans);
-            allViewsToUpdate.AddRange(viewsIntrElevs);
-            allViewsToUpdate.AddRange(viewsElecPlans);
-            allViewsToUpdate.AddRange(viewsEnlargedFormPlans);
-            allViewsToUpdate.AddRange(viewsFormPlans);
+            foreach (var viewList in viewsByTemplate.Values)
+            {
+                allViewsToUpdate.AddRange(viewList);
+            }
 
             // create counter variables for final report
             int templatesImported = 0;
@@ -93,7 +84,7 @@ namespace SandBox
                             if (!string.IsNullOrEmpty(curName))
                             {
                                 // check if first character is letter
-                                bool isLetter = Char.IsLetter(curName[0]);
+                                bool isLetter = char.IsLetter(curName[0]);
 
                                 // check if starts with 01, 02, 03, 04, 05, 06, or 07                    
                                 bool isTargetNumber = curName.StartsWith("01") ||
@@ -155,7 +146,7 @@ namespace SandBox
                             }
                             else
                             {
-                                System.Diagnostics.Debug.WriteLine($"Skipping existing template: {sourceTemplate.Name}");
+                                Debug.WriteLine($"Skipping existing template: {sourceTemplate.Name}");
                             }
                         }
 
@@ -174,10 +165,13 @@ namespace SandBox
                         // start the 3rd transaction 
                         t.Start("Assign View Teamplates");
 
-                        foreach(var curMap  in mapVTs)
+                        foreach (var curMap in mapVTs)
                         {
-                            var allViews = Utils.GetViewsByViewTemplateName(curDoc, curMap.OldTemplateName);
-                            Utils.AssignTemplateToView(allViews, curMap.NewTemplateName, curDoc, ref viewsUpdated);
+                            if (viewsByTemplate.ContainsKey(curMap.OldTemplateName))
+                            {
+                                var allViews = viewsByTemplate[curMap.OldTemplateName];
+                                Utils.AssignTemplateToView(allViews, curMap.NewTemplateName, curDoc, ref viewsUpdated);
+                            }
                         }
 
                         // commit the 3rd transaction
