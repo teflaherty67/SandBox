@@ -2,7 +2,7 @@
 using SandBox.Common;
 using System.Linq;
 
-namespace SandBox.Update_To_MEP
+namespace SandBox
 {
     [Transaction(TransactionMode.Manual)]
     public class cmdUpdateToMEP : IExternalCommand
