@@ -134,6 +134,45 @@ namespace SandBox.Common
             }
         }
 
+        internal static List<ViewPlan> GetAllPlanViews(Document curDoc)
+        {
+            FilteredElementCollector m_Collector = new FilteredElementCollector(curDoc);
+            ICollection<Element> m_allViews = m_Collector.OfClass(typeof(ViewPlan)).ToElements();
+
+            List<ViewPlan> m_allPlanViews = new List<ViewPlan>();
+
+            // loop through all views and check if view is a plan view
+            foreach (ViewPlan curViewPlan in m_allViews.Cast<ViewPlan>())
+            {
+                if ((curViewPlan.ViewType == ViewType.FloorPlan || curViewPlan.ViewType == ViewType.CeilingPlan)
+                    && !curViewPlan.IsTemplate)
+                {
+                    // add view to list
+                    m_allPlanViews.Add(curViewPlan);
+                }
+            }
+
+            return m_allPlanViews.OrderBy(v => v.GenLevel.Elevation).ThenBy(v => v.Name).ToList();
+        }
+
+        internal static List<View> GetAllViews(Document curDoc)
+        {
+            FilteredElementCollector m_colviews = new FilteredElementCollector(curDoc)
+                .OfCategory(BuiltInCategory.OST_Views);
+
+            List<View> m_views = new List<View>();
+
+            // loop through views and add to list
+            foreach (View x in m_colviews.ToElements())
+            {
+                m_views.Add(x);
+            }
+
+            return m_views;
+        }
+
+
+
         #endregion
     }
 }
