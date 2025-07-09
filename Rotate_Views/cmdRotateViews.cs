@@ -31,7 +31,6 @@ namespace SandBox
                 TaskDialogResult tdSchedSuccessRes = tdNoViews.Show();
             }
 
-
             return Result.Succeeded;
         }
 
