@@ -6,6 +6,7 @@ namespace SandBox.Common
 {
     internal static class Utils
     {
+
         internal static RibbonPanel CreateRibbonPanel(UIControlledApplication app, string tabName, string panelName)
         {
             RibbonPanel currentPanel = GetRibbonPanelByName(app, tabName, panelName);
@@ -171,7 +172,151 @@ namespace SandBox.Common
             return m_views;
         }
 
+        /// <summary>
+        /// Creates a display name for a view showing type and level
+        /// </summary>
+        public static string GetViewDisplayName(ViewPlan view)
+        {
+            string viewType = view.ViewType == ViewType.FloorPlan ? "Floor Plan" : "Ceiling Plan";
+            string levelName = view.GenLevel?.Name ?? "Unknown Level";
+            return $"{view.Name} ({viewType} - {levelName})";
+        }
 
+        /// <summary>
+        /// Rotates multiple views by the specified angle
+        /// </summary>
+        public static void RotateViews(Document curDoc, List<ViewPlan> views, double angleRadians, string description)
+        {
+            if (!views.Any()) return;
+
+            using (Transaction trans = new Transaction(curDoc, $"Rotate {views.Count} Views {description}"))
+            {
+                trans.Start();
+
+                int successCount = 0;
+                int failCount = 0;
+
+                foreach (ViewPlan view in views)
+                {
+                    if (RotateSingleView(curDoc, view, angleRadians))
+                    {
+                        successCount++;
+                    }
+                    else
+                    {
+                        failCount++;
+                    }
+                }
+
+                trans.Commit();
+
+                // Show results
+                if (failCount > 0)
+                {
+                    TaskDialog.Show("Rotation Results",
+                        $"Rotation completed:\n" +
+                        $"• Successfully rotated: {successCount} views\n" +
+                        $"• Failed to rotate: {failCount} views\n\n" +
+                        $"Failed views may not have crop regions enabled or may be read-only.",
+                        TaskDialogCommonButtons.Ok);
+                }
+                else
+                {
+                    TaskDialog.Show("Success",
+                        $"Successfully rotated {successCount} view(s) {description}.",
+                        TaskDialogCommonButtons.Ok);
+                }
+            }
+        }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        /// <summary>
+        /// Rotates a single view by finding and rotating its crop box element
+        /// </summary>
+        private static bool RotateSingleView(Document curDoc, ViewPlan view, double angleRadians)
+        {
+            try
+            {
+                // Ensure crop box is active
+                if (!view.CropBoxActive)
+                {
+                    view.CropBoxActive = true;
+                    curDoc.Regenerate();
+                }
+
+                // Find the crop box element
+                Element cropBoxElement = FindCropBoxElement(curDoc, view);
+
+                if (cropBoxElement != null)
+                {
+                    return RotateCropBoxElement(curDoc, cropBoxElement, angleRadians);
+                }
+
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Finds the crop box element for a specific view
+        /// </summary>
+        private static Element FindCropBoxElement(Document curDoc, ViewPlan view)
+        {
+            FilteredElementCollector collector = new FilteredElementCollector(curDoc)
+                .OfCategory(BuiltInCategory.OST_CropBoxes)
+                .WherePasses(new ElementOwnerViewFilter(view.Id));
+
+            return collector.FirstElement();
+        }
+
+        /// <summary>
+        /// Rotates a crop box element around its center point
+        /// </summary>
+        private static bool RotateCropBoxElement(Document curDoc, Element cropBoxElement, double angleRadians)
+        {
+            try
+            {
+                BoundingBoxXYZ bbox = cropBoxElement.get_BoundingBox(null);
+                if (bbox == null) return false;
+
+                XYZ centerPoint = (bbox.Min + bbox.Max) * 0.5;
+
+                Line rotationAxis = Line.CreateBound(
+                    centerPoint,
+                    centerPoint + XYZ.BasisZ
+                );
+
+                ElementTransformUtils.RotateElement(
+                    curDoc,
+                    cropBoxElement.Id,
+                    rotationAxis,
+                    angleRadians
+                );
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region Rotation Angle Constants
+
+        public static class RotationAngles
+        {
+            public const double CounterClockwise90 = Math.PI / 2;
+            public const double Clockwise90 = -Math.PI / 2;
+            public const double Rotate180 = Math.PI;
+        }
 
         #endregion
     }

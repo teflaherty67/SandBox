@@ -31,6 +31,16 @@ namespace SandBox
                 TaskDialogResult tdSchedSuccessRes = tdNoViews.Show();
             }
 
+            // show the SelectFromList form
+            var selectedViews = new frmSelectFromList(allPlanViews, "Select Views to Rotate", "Rotate 90° Counter-Clockwise");
+
+            if (selectedViews == null || selectedViews.Count == 0)
+            {
+                return Result.Cancelled;
+            }
+
+            // rotate selected views
+            Utils.RotateViews(curDoc, selectedViews, Utils.RotationAngles.CounterClockwise90, "90° Counter-Clockwise");
 
             return Result.Succeeded;
         }
