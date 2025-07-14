@@ -71,7 +71,7 @@ namespace SandBox
                 // change the flooring per the selected spec level
 
                 // notify the user
-                // flooring was chnaged at (list rooms) per the selected spec level
+                // flooring was changed at (list rooms) per the selected spec level
 
                 #endregion
 
@@ -79,11 +79,12 @@ namespace SandBox
 
                 // set the door schedule as the active view
 
-                // change front door type
+                // change front door type (will it update the door in all design options?)
+                // search for door from Covered Porch
 
-                // change rear door type
+                // change rear door type (how to find it; width + Exterior Entry description?) 
 
-                // notify the user
+                // notify the user (verify swing parameter doesn't change)
                 // front and rear doors were changed per the selected spec level
 
                 #endregion
@@ -99,20 +100,23 @@ namespace SandBox
                 // add/remove the Ref Sp cabinet
 
                 // raise/lower the backsplash height
+                // add/remove full backsplash
 
                 // notify the user
                 // upper cabinets were revised per the selected spec level
                 // backsplash height was raised/lowered per the selected spec level
 
-                #region Light Fixture Updates
+                #region Electrical Plan Updates
 
-                // set the first floor as the active view
+                // set the first floor electrical plan as the active view
 
                 // change light fixtures in specified rooms on first floor
 
                 // add/remove the clg fan note
 
                 // add/remove the sprinkler outlet at the Garage
+                // add/remove outlet note
+                // add/remove dimension (can it be located 5' from the corner?)
 
                 // notify user
                 // light fixtures were changed in (list rooms) per the selected spec level
