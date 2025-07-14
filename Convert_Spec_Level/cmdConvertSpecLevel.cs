@@ -106,6 +106,8 @@ namespace SandBox
                 // upper cabinets were revised per the selected spec level
                 // backsplash height was raised/lowered per the selected spec level
 
+                #endregion
+
                 #region Electrical Plan Updates
 
                 // set the first floor electrical plan as the active view
