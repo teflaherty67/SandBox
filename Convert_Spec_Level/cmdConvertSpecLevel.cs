@@ -1,4 +1,5 @@
-﻿using SandBox.Classes;
+﻿using Autodesk.Revit.DB.Architecture;
+using SandBox.Classes;
 using SandBox.Common;
 
 namespace SandBox
@@ -13,8 +14,7 @@ namespace SandBox
             UIDocument uidoc = uiapp.ActiveUIDocument;
             Document curDoc = uidoc.Document;
 
-            // Your code goes here
-
+            // launch the form to get user input
             frmConvertSpecLevel curForm = new frmConvertSpecLevel()
             {
                 Topmost = true,
@@ -22,6 +22,65 @@ namespace SandBox
 
             curForm.ShowDialog();
 
+            // check if user clicked OK
+            if (curForm.DialogResult != true)
+            {
+                return Result.Cancelled;
+            }
+
+            // get user input from the form
+            string selectedClient = curForm.GetSelectedClient();
+            string selectedSpecLevel = curForm.GetSelectedSpecLevel();
+            string selectedMWCabHeight = curForm.GetSelectedMWCabHeight();
+
+            // create a varibale for the Floor Finish value
+            string valueFloorFinish = "";
+
+            // get the Family room
+            List<Room> familyRooms = Utils.GetRoomByNameContains(curDoc, "Family");
+
+            if (familyRooms.Count == 0)
+            {
+                TaskDialog.Show("Error", "No Family rooms found in the project.");
+            }
+            // set floor finish value based on spec level
+            else
+            {
+                if (selectedSpecLevel == "Complete Home")
+                {
+                    valueFloorFinish = "Carpet";
+                }
+                else if (selectedSpecLevel == "Complete Home Plus")
+                {
+                    valueFloorFinish = "HS";
+                }
+                else
+                {
+                    TaskDialog.Show("Error", "Invalid Spec Level selected.");
+                    return Result.Failed;
+                }
+            }
+
+            using (Transaction t = new Transaction(curDoc, "Convert Spec Level"))
+            {
+                t.Start();
+
+                // create vaiable for Family
+                Room roomFamily = familyRooms.FirstOrDefault();
+
+                // get the Floor Finish parameter
+                Parameter paramFloor = roomFamily.LookupParameter("Floor Finish");
+
+                // set the value of Floor Finish parameter based on spec level
+                if (paramFloor != null && !paramFloor.IsReadOnly)
+                {
+                    paramFloor.Set(valueFloorFinish);
+                }
+                else
+                {
+                    TaskDialog.Show("Error", "Floor Finish parameter not found or value is empty.");
+                }
+            }
 
             return Result.Succeeded;
         }

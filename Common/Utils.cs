@@ -1,4 +1,5 @@
-﻿using SandBox.Classes;
+﻿using Autodesk.Revit.DB.Architecture;
+using SandBox.Classes;
 using System.Diagnostics.Metrics;
 using System.Windows.Controls;
 
@@ -132,6 +133,50 @@ namespace SandBox.Common
                     viewsUpdated++;
                 }
             }
+        }
+
+        /// <summary>
+        /// Retrieves all rooms from the document whose names contain the specified string,
+        /// and filters out rooms with zero or invalid area.
+        /// </summary>
+        /// <param name="curDoc">The current Revit document.</param>
+        /// <param name="nameRoom">The substring to search for in room names.</param>
+        /// <returns>A list of rooms with names containing the specified string and valid area.</returns>
+        internal static List<Room> GetRoomByNameContains(Document curDoc, string nameRoom)
+        {
+            // Retrieve all rooms in the document
+            List<Room> m_roomList = GetAllRooms(curDoc);
+
+            // Initialize the list to hold the matching rooms
+            List<Room> m_returnList = new List<Room>();
+
+            // Iterate through all rooms
+            foreach (Room curRoom in m_roomList)
+            {
+                // Check if the room name contains the specified substring
+                if (curRoom != null &&
+                curRoom.Name != null &&
+                curRoom.Name.IndexOf(nameRoom, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    // Check if the room has a valid area (greater than 0)
+                    if (curRoom.Area > 0)
+                    {
+                        // Add the room to the result list
+                        m_returnList.Add(curRoom);
+                    }
+                }
+            }
+
+            // Return the filtered list of rooms
+            return m_returnList;
+        }
+
+        public static List<Room> GetAllRooms(Document curDoc)
+        {
+            return new FilteredElementCollector(curDoc)
+                .OfCategory(BuiltInCategory.OST_Rooms)
+                .Cast<Room>()
+                .ToList();
         }
 
         #endregion

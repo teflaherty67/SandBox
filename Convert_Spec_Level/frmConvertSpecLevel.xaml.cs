@@ -35,9 +35,8 @@ namespace SandBox
                 cmbClient.Items.Add(client);
             }
 
-            // set the default selection to the first height in the list
+            // set the default selection to the first client in the list (Central Texas)
             cmbClient.SelectedIndex = 0;
-
 
             // create a list of MW cabinet heights
             List<string> listMWCabinets = new List<string> { "18\"", "21\"", "24\"", "27\"", "30\"" };
@@ -48,8 +47,30 @@ namespace SandBox
                 cmbMWCabHeight.Items.Add(height);
             }
 
-            // set the default selection to the first client in the list (Central Texas)
+            // set the default selection to the first height in the list
             cmbMWCabHeight.SelectedIndex = 0;
+        }
+
+        public string GetSelectedClient()
+        {
+            return cmbClient.SelectedItem as string;
+        }        
+
+        public string GetSelectedSpecLevel()
+        {
+            if (rbCompleteHome.IsChecked == true)
+            {
+                return rbCompleteHome.Content.ToString();
+            }
+            else
+            {
+                 return rbCompleteHomePlus.Content.ToString();
+            }           
+        }
+
+        public string GetSelectedMWCabHeight()
+        {
+            return cmbMWCabHeight.SelectedItem as string;
         }
 
         private void btnOK_Click(object sender, RoutedEventArgs e)
