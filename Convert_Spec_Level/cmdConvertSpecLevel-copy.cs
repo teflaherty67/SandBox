@@ -5,7 +5,7 @@ using SandBox.Common;
 namespace SandBox
 {
     [Transaction(TransactionMode.Manual)]
-    public class cmdConvertSpecLevel : IExternalCommand
+    public class cmdConvertSpecLevel_copy : IExternalCommand
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -65,78 +65,32 @@ namespace SandBox
             {
                 t.Start();
 
-                #region Floor Plan Updates
-                // set the first floor as the active view
-
-                // change the flooring per the selected spec level
-
-                // notify the user
-                // flooring was chnaged at (list rooms) per the selected spec level
-
-                #endregion
-
-                #region Door Updates
-
-                // set the door schedule as the active view
-
-                // change front door type
-
-                // change rear door type
-
-                // notify the user
-                // front and rear doors were changed per the selected spec level
-
-                #endregion
-
-                #region Cabinet Updates
-
-                // set the Interior Elevations sheet as the active view
-
-                // change the upper cabinet height per the selected spec level
-
-                // change the microwave cabinet height per the selected MW Cabinet height
-
-                // add/remove the Ref Sp cabinet
-
-                // raise/lower the backsplash height
-
-                // notify the user
-                // upper cabinets were revised per the selected spec level
-                // backsplash height was raised/lowered per the selected spec level
-
                 #region Light Fixture Updates
 
-                // set the first floor as the active view
+                // change LED to Ceilling fan in specified rooms
+                Utils.UpdateLightingFixtures(curDoc, selectedSpecLevel);
 
-                // change light fixtures in specified rooms on first floor
+                // remove/add clg fan note
+                Utils.ManageClgFanNotes(curDoc, selectedSpecLevel);
 
-                // add/remove the clg fan note
-
-                // add/remove the sprinkler outlet at the Garage
-
-                // notify user
-                // light fixtures were changed in (list rooms) per the selected spec level
-                // Sprinkler outlet was added/removed at the Garage per the selected spec level
-
-                // set the second floor as the active view
-
-                // change light fixtures in specified rooms on second floor
-
-                // add/remove the clg fan note
-
-                // notify user
-                // light fixtures were changed in (list rooms) per the selected spec level
 
                 #endregion
 
-                #region Dialogs
+                // create vaiable for Family
+                Room roomFamily = familyRooms.FirstOrDefault();
 
-                // show a dialog to notify the user that the spec level conversion is complete
-                // message should include client name & spec level
+                // get the Floor Finish parameter
+                Parameter paramFloor = roomFamily.LookupParameter("Floor Finish");
 
-                // set the appropriate checklist legend for the selected client and spec level as the actuive view
-
-                #endregion
+                // set the value of Floor Finish parameter based on spec level
+                if (paramFloor != null && !paramFloor.IsReadOnly)
+                {
+                    paramFloor.Set(valueFloorFinish);
+                }
+                else
+                {
+                    TaskDialog.Show("Error", "Floor Finish parameter not found or value is empty.");
+                }
 
                 t.Commit();
             }
