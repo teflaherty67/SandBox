@@ -559,6 +559,67 @@ namespace SandBox.Common
             }
         }
 
-        #endregion
+        /// <summary>
+        /// Retrieves all <see cref="View"/> elements from the specified Revit document.
+        /// </summary>
+        /// <param name="curDoc">The current <see cref="Document"/>.</param>
+        /// <returns>A list of all <see cref="View"/> elements found in the document.</returns>
+        public static List<View> GetAllViews(Document curDoc)
+        {
+            // Collect all elements in the 'Views' category that are not element types
+            FilteredElementCollector m_colviews = new FilteredElementCollector(curDoc)
+                .OfCategory(BuiltInCategory.OST_Views)
+                .WhereElementIsNotElementType();
+
+            // Initialize the list to hold the views
+            List<View> m_views = new List<View>();
+
+            // Cast and add each view to the list
+            foreach (View x in m_colviews.ToElements())
+            {
+                m_views.Add(x);
+            }
+
+            // Return the complete list of views
+            return m_views;
+        }
+
+
+        /// <summary>
+        /// Get a view by name that contains specified string and is associated with specified level
+        /// </summary>
+        /// <param name="curDoc">Current Revit document</param>
+        /// <param name="nameContains">String that view name should contain</param>
+        /// <param name="associatedLevel">Name of the associated level</param>
+        /// <returns>First matching view or null if not found</returns>
+        public static View GetViewByNameContainsAndAssociatedLevel(Document curDoc, string nameContains, string associatedLevel)
+        {
+            List<View> m_allViews = GetAllViews(curDoc);
+
+            foreach (View curView in m_allViews)
+            {
+                // Check if the view name contains the specified string
+                if (curView.Name.IndexOf(nameContains, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    // Try to get the Associated Level parameter by name
+                    Parameter associatedLevelParam = curView.LookupParameter("Associated Level");
+
+                    if (associatedLevelParam != null && associatedLevelParam.HasValue)
+                    {
+                        string levelName = associatedLevelParam.AsString();
+
+                        if (levelName == associatedLevel)
+                        {
+                            return curView; // Return the first matching view
+                        }
+                    }
+                }
+            }
+
+            // Return null if no matching view is found
+            return null;
+        }
     }
+
+    #endregion
 }

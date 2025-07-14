@@ -61,12 +61,17 @@ namespace SandBox
                 }
             }
 
+            // set the first floor as the active view
+            View curView;
+            curView = Utils.GetViewByNameContainsAndAssociatedLevel(curDoc, "Annotation", "First Floor");
+
+            uidoc.ActiveView = curView;
+
             using (Transaction t = new Transaction(curDoc, "Convert Spec Level"))
             {
                 t.Start();
 
-                #region Floor Plan Updates
-                // set the first floor as the active view
+                #region Floor Plan Updates                
 
                 // change the flooring per the selected spec level
 
