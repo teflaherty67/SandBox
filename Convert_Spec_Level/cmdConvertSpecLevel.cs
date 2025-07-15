@@ -94,13 +94,21 @@ namespace SandBox
                     // start the second transaction
                     t.Start();
 
-                    // change front door type (will it update the door in all design options?)
-                    // search for door from Covered Porch
+                    // update front door type
+                    Utils.UpdateFrontDoorType(curDoc, selectedSpecLevel);
 
-                    // change rear door type (how to find it; width + Exterior Entry description?) 
+                    // update rear door type
+                    Utils.UpdateRearDoorType(curDoc, selectedSpecLevel);
 
-                    // notify the user (verify swing parameter doesn't change)
-                    // front and rear doors were changed per the selected spec level
+                    // notify the user
+                    TaskDialog tdDrUpdate = new TaskDialog("Complete");
+                    tdDrUpdate.MainIcon = Icon.TaskDialogIconInformation;
+                    tdDrUpdate.Title = "Spec Conversion";
+                    tdDrUpdate.TitleAutoPrefix = false;
+                    tdDrUpdate.MainContent = "TThe front and rear doors were replaced per the specified spec level.";
+                    tdDrUpdate.CommonButtons = TaskDialogCommonButtons.Close;
+
+                    TaskDialogResult tdDrUpdateSuccess = tdDrUpdate.Show();
 
                     // commit the transaction
                     t.Commit();
@@ -173,9 +181,10 @@ namespace SandBox
                     t.Start();
 
                     // replace the light fixtures in the specified rooms per the selected spec level
-                    
+                    Utils.UpdateLightingFixturesInActiveView(curDoc, selectedSpecLevel);
+
                     // add/remove the sprinkler outlet at Garage
-                    
+
                     // loop through all the views & add/remove the clg fan note & sprinkler outlet note
                     foreach (View curElecView in firstFloorElecViews)
                     {

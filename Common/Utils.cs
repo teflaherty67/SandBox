@@ -67,7 +67,7 @@ namespace SandBox.Common
             }
 
             return m_returnList;
-        }      
+        }
 
         public static View GetViewTemplateByName(Document curDoc, string nameViewTemplate)
         {
@@ -214,19 +214,20 @@ namespace SandBox.Common
 
         /// <summary>
         /// Updates lighting fixtures in specified rooms based on the given specification level.
+        /// Only processes fixtures in rooms visible in the active view.
         /// </summary>
         /// <param name="curDoc">The current <see cref="Document"/>.</param>
         /// <param name="specLevel">The specification level (e.g., "Complete Home", "Complete Home Plus").</param>
-        internal static void UpdateLightingFixtures(Document curDoc, string specLevel)
+        internal static void UpdateLightingFixturesInActiveView(Document curDoc, string specLevel)
         {
             // Define rooms that need lighting fixture updates
             List<string> roomsToUpdate = new List<string>
-            {
-                "Master Bedroom",
-                "Covered Patio",
-                "Gameroom",
-                "Loft"
-            };
+        {
+            "Master Bedroom",
+            "Covered Patio",
+            "Gameroom",
+            "Loft"
+        };
 
             // Determine target family type based on spec level
             string targetFamilyType = specLevel switch
@@ -239,6 +240,14 @@ namespace SandBox.Common
             if (targetFamilyType == null)
             {
                 TaskDialog.Show("Error", "Invalid Spec Level selected.");
+                return;
+            }
+
+            // Get the active view
+            View activeView = curDoc.ActiveView;
+            if (activeView == null)
+            {
+                TaskDialog.Show("Error", "No active view found.");
                 return;
             }
 
@@ -263,8 +272,8 @@ namespace SandBox.Common
             // Iterate through each room to update lighting fixtures
             foreach (string roomName in roomsToUpdate)
             {
-                // Get the room by name
-                List<Room> rooms = GetRoomByNameContains(curDoc, roomName);
+                // Get the room by name in the active view only
+                List<Room> rooms = GetRoomByNameContainsInActiveView(curDoc, activeView, roomName);
 
                 // If no room found, show an error message and continue to the next room
                 if (rooms.Count == 0)
@@ -276,8 +285,8 @@ namespace SandBox.Common
                 // Process each matched room
                 foreach (Room room in rooms)
                 {
-                    // Find the lighting fixture of the specified family in the room
-                    List<FamilyInstance> lightingFixtures = GetLightFixtureInRoom(curDoc, room, "LT-No Base");
+                    // Find the lighting fixture of the specified family in the room (active view only)
+                    List<FamilyInstance> lightingFixtures = GetLightFixtureInRoomInActiveView(curDoc, activeView, room, "LT-No Base");
 
                     // Update the lighting fixture type
                     foreach (FamilyInstance curFixture in lightingFixtures)
@@ -290,15 +299,15 @@ namespace SandBox.Common
             }
 
             // Show summary message
-            string message = $"Updated {updatedCount} light fixtures to '{targetFamilyType}'.";
+            string message = $"Updated {updatedCount} light fixtures to '{targetFamilyType}' in active view '{activeView.Name}'.";
             if (roomsNotFound > 0)
             {
-                message += $"\n{roomsNotFound} room type(s) not found in the project.";
+                message += $"\n{roomsNotFound} room type(s) not found in the active view.";
             }
 
             TaskDialog.Show("Light Fixture Update Complete", message);
         }
-        
+
         /// <summary>
         /// Finds a family symbol by family name and type name
         /// </summary>
@@ -316,18 +325,46 @@ namespace SandBox.Common
         }
 
         /// <summary>
-        /// Gets all light fixtures (family instances) in a specific room
+        /// Gets rooms by name that contain the specified string and are visible in the active view
+        /// </summary>
+        /// <param name="curDoc">Current document</param>
+        /// <param name="activeView">The active view</param>
+        /// <param name="roomNameContains">String that room name should contain</param>
+        /// <returns>List of matching rooms visible in active view</returns>
+        private static List<Room> GetRoomByNameContainsInActiveView(Document curDoc, View activeView, string roomNameContains)
+        {
+            List<Room> matchingRooms = new List<Room>();
+
+            // Get all rooms visible in the active view
+            FilteredElementCollector roomCollector = new FilteredElementCollector(curDoc, activeView.Id)
+                .OfCategory(BuiltInCategory.OST_Rooms)
+                .WhereElementIsNotElementType();
+
+            foreach (Room room in roomCollector.Cast<Room>())
+            {
+                if (room.Name.IndexOf(roomNameContains, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    matchingRooms.Add(room);
+                }
+            }
+
+            return matchingRooms;
+        }
+
+        /// <summary>
+        /// Gets all light fixtures (family instances) in a specific room that are visible in the active view
         /// </summary>
         /// <param name="curDoc">The Revit document</param>
+        /// <param name="activeView">The active view</param>
         /// <param name="room">The room to search in</param>
         /// <param name="familyName">The family name to filter by (optional)</param>
-        /// <returns>List of family instances in the room</returns>
-        private static List<FamilyInstance> GetLightFixtureInRoom(Document curDoc, Room room, string familyName = null)
+        /// <returns>List of family instances in the room visible in active view</returns>
+        private static List<FamilyInstance> GetLightFixtureInRoomInActiveView(Document curDoc, View activeView, Room room, string familyName = null)
         {
             List<FamilyInstance> m_lightFixtures = new List<FamilyInstance>();
 
-            // Get all lighting fixtures in the document
-            var familyInstances = new FilteredElementCollector(curDoc)
+            // Get all lighting fixtures visible in the active view
+            var familyInstances = new FilteredElementCollector(curDoc, activeView.Id)
                 .OfClass(typeof(FamilyInstance))
                 .OfCategory(BuiltInCategory.OST_LightingFixtures)
                 .Cast<FamilyInstance>();
@@ -348,7 +385,7 @@ namespace SandBox.Common
 
             return m_lightFixtures;
         }
-        
+
         #endregion
 
         #region Text Notes
@@ -362,12 +399,12 @@ namespace SandBox.Common
         {
             // Define rooms that need note management
             List<string> roomsToUpdate = new List<string>
-    {
-        "Master Bedroom",
-        "Covered Patio",
-        "Gameroom",
-        "Loft"
-    };
+            {
+                "Master Bedroom",
+                "Covered Patio",
+                "Gameroom",
+                "Loft"
+            };
 
             string noteText = "Block & pre-wire for clg fan";
 
@@ -620,9 +657,43 @@ namespace SandBox.Common
             return null;
         }
 
-        internal static View GetScheduleByNameContains(Document curDoc, string v)
+        internal static ViewSchedule GetScheduleByNameContains(Document curDoc, string scheduleString)
         {
-            throw new NotImplementedException();
+            List<ViewSchedule> m_scheduleList = GetAllSchedules(curDoc);
+
+            foreach (ViewSchedule curSchedule in m_scheduleList)
+            {
+                if (curSchedule.Name.Contains(scheduleString))
+                    return curSchedule;
+            }
+
+            return null;
+        }
+
+        internal static List<ViewSchedule> GetAllSchedules(Document curDoc)
+        {
+            List<ViewSchedule> m_schedList = new List<ViewSchedule>();
+
+            FilteredElementCollector curCollector = new FilteredElementCollector(curDoc);
+            curCollector.OfClass(typeof(ViewSchedule));
+            curCollector.WhereElementIsNotElementType();
+
+            //loop through views and check if schedule - if so then put into schedule list
+            foreach (ViewSchedule curView in curCollector)
+            {
+                if (curView.ViewType == ViewType.Schedule)
+                {
+                    if (curView.IsTemplate == false)
+                    {
+                        if (curView.Name.Contains("<") && curView.Name.Contains(">"))
+                            continue;
+                        else
+                            m_schedList.Add((ViewSchedule)curView);
+                    }
+                }
+            }
+
+            return m_schedList;
         }
 
         internal static List<View> GetAllViewsByNameContainsAndAssociatedLevel(Document curDoc, string v1, string v2)
@@ -634,7 +705,177 @@ namespace SandBox.Common
         {
             throw new NotImplementedException();
         }
-    }
 
-    #endregion
+        #endregion
+
+        #region Front Door
+
+        /// <summary>
+        /// Finds the front door based on room relationships
+        /// </summary>
+        /// <param name="curDoc">The Revit document</param>
+        /// <returns>The front door instance or null if not found</returns>
+        public static FamilyInstance GetFrontDoor(Document curDoc)
+            {
+                // Get all doors in the document
+                List<FamilyInstance> allDoors = GetAllDoors(curDoc);
+
+                foreach (FamilyInstance curDoor in allDoors)
+                {
+                    // Get the FromRoom and ToRoom properties
+                    Room fromRoom = curDoor.FromRoom;
+                    Room toRoom = curDoor.ToRoom;
+
+                    if (fromRoom != null && toRoom != null)
+                    {
+                        string fromRoomName = fromRoom.Name;
+                        string toRoomName = toRoom.Name;
+
+                        // Check if this matches front door criteria
+                        if (IsFrontDoorMatch(fromRoomName, toRoomName))
+                        {
+                            return curDoor;
+                        }
+                    }
+                }
+
+                return null; // Front door not found
+            }
+
+            /// <summary>
+            /// Checks if the room names match front door criteria
+            /// </summary>
+            /// <param name="fromRoomName">The "From Room: Name" value</param>
+            /// <param name="toRoomName">The "To Room: Name" value</param>
+            /// <returns>True if this appears to be the front door</returns>
+            private static bool IsFrontDoorMatch(string fromRoomName, string toRoomName)
+            {
+                if (string.IsNullOrEmpty(fromRoomName) || string.IsNullOrEmpty(toRoomName))
+                    return false;
+
+                // Check if From Room is Entry or Foyer
+                bool fromRoomMatch = fromRoomName.IndexOf("Entry", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                    fromRoomName.IndexOf("Foyer", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                // Check if To Room is Covered Porch
+                bool toRoomMatch = toRoomName.IndexOf("Covered Porch", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                return fromRoomMatch && toRoomMatch;
+            }
+
+            /// <summary>
+            /// Gets all door instances in the document
+            /// </summary>
+            /// <param name="curDoc">The Revit document</param>
+            /// <returns>List of all door family instances</returns>
+            private static List<FamilyInstance> GetAllDoors(Document curDoc)
+            {
+                return new FilteredElementCollector(curDoc)
+                    .OfCategory(BuiltInCategory.OST_Doors)
+                    .OfClass(typeof(FamilyInstance))
+                    .Cast<FamilyInstance>()
+                    .ToList();
+            }
+
+            /// <summary>
+            /// Updates the front door type based on spec level
+            /// </summary>
+            /// <param name="curDoc">The Revit document</param>
+            /// <param name="specLevel">The spec level selection</param>
+            public static void UpdateFrontDoor(Document curDoc, string specLevel)
+            {
+                // Find the front door
+                FamilyInstance frontDoor = GetFrontDoor(curDoc);
+
+                if (frontDoor == null)
+                {
+                    TaskDialog.Show("Warning", "Front door not found. Looking for door from Entry/Foyer to Covered Porch.");
+                    return;
+                }
+
+                // Determine the new door type based on spec level
+                string newDoorTypeName = GetFrontDoorType(specLevel);
+                if (string.IsNullOrEmpty(newDoorTypeName))
+                {
+                    TaskDialog.Show("Error", "Unable to determine front door type for spec level: " + specLevel);
+                    return;
+                }
+
+                // Find the new door family symbol
+                FamilySymbol newDoorSymbol = FindDoorSymbol(curDoc, newDoorTypeName);
+                if (newDoorSymbol == null)
+                {
+                    TaskDialog.Show("Error", $"Door type '{newDoorTypeName}' not found in the project.");
+                    return;
+                }
+
+                // Activate the symbol if needed
+                if (!newDoorSymbol.IsActive)
+                {
+                    newDoorSymbol.Activate();
+                }
+
+                // Store original swing parameter value
+                Parameter swingParam = frontDoor.LookupParameter("Swing");
+                string originalSwing = swingParam?.AsString();
+
+                // Change the door type
+                frontDoor.Symbol = newDoorSymbol;
+
+                // Verify/restore swing parameter if it changed
+                if (swingParam != null && !string.IsNullOrEmpty(originalSwing))
+                {
+                    string newSwing = swingParam.AsString();
+                    if (newSwing != originalSwing)
+                    {
+                        // Try to restore original swing - this might need adjustment based on parameter type
+                        TaskDialog.Show("Warning", $"Door swing may have changed from '{originalSwing}' to '{newSwing}'. Please verify.");
+                    }
+                }
+
+                TaskDialog.Show("Success", $"Front door updated to '{newDoorTypeName}' for {specLevel} spec level.");
+            }
+
+            /// <summary>
+            /// Gets the front door type name based on spec level
+            /// </summary>
+            /// <param name="specLevel">The spec level</param>
+            /// <returns>The door type name</returns>
+            private static string GetFrontDoorType(string specLevel)
+            {
+                return specLevel switch
+                {
+                    "Complete Home" => "Standard Front Door", // Replace with actual type name
+                    "Complete Home Plus" => "Premium Front Door", // Replace with actual type name
+                    _ => null
+                };
+            }
+
+            /// <summary>
+            /// Finds a door symbol by type name
+            /// </summary>
+            /// <param name="curDoc">The Revit document</param>
+            /// <param name="typeName">The door type name</param>
+            /// <returns>The door symbol or null if not found</returns>
+            private static FamilySymbol FindDoorSymbol(Document curDoc, string typeName)
+            {
+                return new FilteredElementCollector(curDoc)
+                    .OfCategory(BuiltInCategory.OST_Doors)
+                    .OfClass(typeof(FamilySymbol))
+                    .Cast<FamilySymbol>()
+                    .FirstOrDefault(ds => ds.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
+            }
+
+        internal static void UpdateFrontDoorType(Document curDoc, string selectedSpecLevel)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal static void UpdateRearDoorType(Document curDoc, string selectedSpecLevel)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+    }
 }
