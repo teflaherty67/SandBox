@@ -881,9 +881,52 @@ namespace SandBox.Common
 
         internal static void UpdateFloorFinishInActiveView(Document curDoc, string selectedSpecLevel)
         {
-            List<Room> m_RoomstoUpdatefamilyRooms = GetRoomByNameContains(curDoc, "Family");
+            // create a list of rooms to update
+            List<string> m_RoomsToUpdateFloorFinish = new List<string>
+            {
+                "Master Bedroom",
+                "Family",
+                "Hall"
+            };
+
+            // get the room element of the rooms to update
+            List<Room> m_RoomstoUpdate = GetRoomsByNameContainsInActiveView(curDoc, m_RoomsToUpdateFloorFinish);
 
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Gets all rooms in the active view whose names contain any of the specified strings.
+        /// </summary>
+        /// <param name="curDoc">The current Revit document.</param>
+        /// <param name="RoomsToUpdate">List of room name strings to search for (case-insensitive matching).</param>
+        /// <returns>A list of Room elements in the active view whose names contain any of the specified strings.</returns>
+        private static List<Room> GetRoomsByNameContainsInActiveView(Document curDoc, List<string> RoomsToUpdate)
+        {
+            // get the active view from the document
+            View activeView = curDoc.ActiveView;
+
+            // create a lsit to hold the matching rooms
+            List<Room> m_matchingRooms = new List<Room>();
+
+            // get all the rooms in the active view
+            FilteredElementCollector m_colRooms = new FilteredElementCollector(curDoc, activeView.Id)
+                .OfCategory(BuiltInCategory.OST_Rooms)
+                .WhereElementIsNotElementType();
+
+            // loop through the rooms and check if the room name contains the string in the list
+            foreach (Room curRoom in m_colRooms)
+            {
+                // check if the room name contains any of the strings in the list
+                if (RoomsToUpdate.Any(roomName => curRoom.Name.IndexOf(roomName, StringComparison.OrdinalIgnoreCase) >= 0))
+                {
+                    // if so, add the room to the matching rooms list
+                    m_matchingRooms.Add(curRoom);
+                }
+            }
+
+            // return the matching rooms
+            return m_matchingRooms;
         }
 
         #endregion
