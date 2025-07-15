@@ -7,6 +7,7 @@ namespace SandBox.Common
 {
     internal static class Utils
     {
+        #region Ribbon Panels
         internal static RibbonPanel CreateRibbonPanel(UIControlledApplication app, string tabName, string panelName)
         {
             RibbonPanel currentPanel = GetRibbonPanelByName(app, tabName, panelName);
@@ -27,6 +28,8 @@ namespace SandBox.Common
 
             return null;
         }
+
+        #endregion
 
         #region Views     
 
@@ -873,6 +876,13 @@ namespace SandBox.Common
 
         internal static void UpdateRearDoorType(Document curDoc, string selectedSpecLevel)
         {
+            throw new NotImplementedException();
+        }
+
+        internal static void UpdateFloorFinishInActiveView(Document curDoc, string selectedSpecLevel)
+        {
+            List<Room> m_RoomstoUpdatefamilyRooms = GetRoomByNameContains(curDoc, "Family");
+
             throw new NotImplementedException();
         }
 
