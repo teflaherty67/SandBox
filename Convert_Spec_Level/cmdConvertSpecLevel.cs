@@ -62,10 +62,7 @@ namespace SandBox
                     t.Start();
 
                     // change the flooring for the specified rooms per the selected spec level
-                    Utils.UpdateFloorFinishInActiveView(curDoc, selectedSpecLevel);
-
-                    // notify the user
-                    // flooring was changed at (list rooms) per the selected spec level
+                    Utils.UpdateFloorFinishInActiveView(curDoc, selectedSpecLevel);              
 
                     // commit the transaction
                     t.Commit();                        

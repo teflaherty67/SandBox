@@ -879,8 +879,27 @@ namespace SandBox.Common
             throw new NotImplementedException();
         }
 
+
+
+        #endregion
+
+        #region Flooring Update
+
+        /// <summary>
+        /// Updates the Floor Finish parameter for specified room types in the active view based on the selected specification level.
+        /// </summary>
+        /// <param name="curDoc">The current Revit document.</param>
+        /// <param name="selectedSpecLevel">The specification level ("Complete Home" or "Complete Home Plus") that determines the floor finish value.</param>
+        /// <remarks>
+        /// This method updates the following room types: Master Bedroom, Family, and Hall.
+        /// Complete Home sets floor finish to "Carpet", Complete Home Plus sets it to "HS".
+        /// Only processes rooms that are visible in the current active view.
+        /// </remarks>
         internal static void UpdateFloorFinishInActiveView(Document curDoc, string selectedSpecLevel)
         {
+            // get the active view from the document
+            View activeView = curDoc.ActiveView;
+
             // create a list of rooms to update
             List<string> m_RoomsToUpdateFloorFinish = new List<string>
             {
@@ -892,7 +911,41 @@ namespace SandBox.Common
             // get the room element of the rooms to update
             List<Room> m_RoomstoUpdate = GetRoomsByNameContainsInActiveView(curDoc, m_RoomsToUpdateFloorFinish);
 
-            throw new NotImplementedException();
+            // create the switch statement to determine the floor finish based on the spec level
+            string floorFinish = selectedSpecLevel switch
+            {
+                "Complete Home" => "Carpet",
+                "Complete Home Plus" => "HS",
+                _ => null
+            };
+
+            // check if the floor finish is null
+            if (floorFinish == null)
+            {
+                TaskDialog.Show("Error", "Invalid Spec Level selected.");
+                return;
+            }
+
+            // counters
+            int updatedCount = 0;
+           
+            // loop through the rooms to update
+            foreach (Room curRoom in m_RoomstoUpdate)
+            {
+                // get the floor finish parameter
+                Parameter paramFloorFinish = curRoom.LookupParameter("Floor Finish");
+                // check if the parameter is not null and has a value
+                if (paramFloorFinish != null && !paramFloorFinish.IsReadOnly)
+                {
+                    // set the value of the floor finish parameter to the new value
+                    paramFloorFinish.Set(floorFinish);
+                    updatedCount++;
+                }
+            }
+
+            // Show summary message
+            string message = $"Found {m_RoomstoUpdate.Count} room(s) in active view '{activeView.Name}'.\nUpdated flooring to '{floorFinish}' in {updatedCount} room(s).";
+            TaskDialog.Show("Flooring Update Complete", message);
         }
 
         /// <summary>
