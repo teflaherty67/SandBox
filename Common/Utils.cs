@@ -933,7 +933,7 @@ namespace SandBox.Common
             foreach (Room curRoom in m_RoomstoUpdate)
             {
                 // get the floor finish parameter
-                Parameter paramFloorFinish = curRoom.LookupParameter("Floor Finish");
+                Parameter paramFloorFinish = curRoom.get_Parameter(BuiltInParameter.ROOM_FINISH_FLOOR);
                 // check if the parameter is not null and has a value
                 if (paramFloorFinish != null && !paramFloorFinish.IsReadOnly)
                 {
