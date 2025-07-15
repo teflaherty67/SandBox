@@ -33,127 +33,206 @@ namespace SandBox
             string selectedSpecLevel = curForm.GetSelectedSpecLevel();
             string selectedMWCabHeight = curForm.GetSelectedMWCabHeight();
 
-            // create a varibale for the Floor Finish value
-            string valueFloorFinish = "";
-
-            // get the Family room
-            List<Room> familyRooms = Utils.GetRoomByNameContains(curDoc, "Family");
-
-            if (familyRooms.Count == 0)
+            // create a transaction group
+            using (TransactionGroup transGroup = new TransactionGroup(curDoc, "Convert Spec Level"))
             {
-                TaskDialog.Show("Error", "No Family rooms found in the project.");
-            }
-            // set floor finish value based on spec level
-            else
-            {
-                if (selectedSpecLevel == "Complete Home")
+                // start the transaction group
+                transGroup.Start();
+
+                #region Floor Finish Update
+
+                // get first floor annotation view & set as active view
+                View curView = Utils.GetViewByNameContainsAndAssociatedLevel(curDoc, "Annotation", "First Floor");
+
+                if (curView != null)
                 {
-                    valueFloorFinish = "Carpet";
-                }
-                else if (selectedSpecLevel == "Complete Home Plus")
-                {
-                    valueFloorFinish = "HS";
+                    uidoc.ActiveView = curView;
                 }
                 else
                 {
-                    TaskDialog.Show("Error", "Invalid Spec Level selected.");
+                    TaskDialog.Show("Error", "No view found with name containing 'Annotation' and associated with 'First Floor'");
+                    transGroup.RollBack();
                     return Result.Failed;
                 }
-            }
 
-            // set the first floor as the active view
-            View curView;
-            curView = Utils.GetViewByNameContainsAndAssociatedLevel(curDoc, "Annotation", "First Floor");
+                // create & start transaction for updating floor finish
+                using (Transaction t = new Transaction(curDoc, "Update Floor Finish"))
+                {
+                    // start the first transaction
+                    t.Start();
 
-            uidoc.ActiveView = curView;
+                    // change the flooring for the specified rooms per the selected spec level
 
-            using (Transaction t = new Transaction(curDoc, "Convert Spec Level"))
-            {
-                t.Start();
+                    // notify the user
+                    // flooring was changed at (list rooms) per the selected spec level
 
-                #region Floor Plan Updates                
-
-                // change the flooring per the selected spec level
-
-                // notify the user
-                // flooring was changed at (list rooms) per the selected spec level
+                    // commit the transaction
+                    t.Commit();                        
+                }
 
                 #endregion
 
                 #region Door Updates
 
-                // set the door schedule as the active view
+                // get the door schedule & set it as the active view
+                View curSched = Utils.GetScheduleByNameContains(curDoc, "Door Schedule");
 
-                // change front door type (will it update the door in all design options?)
-                // search for door from Covered Porch
+                if (curSched != null)
+                {
+                    uidoc.ActiveView = curSched;
+                }
+                else
+                {
+                    TaskDialog.Show("Error", "No Door Schedule found");
+                    transGroup.RollBack();
+                    return Result.Failed;
+                }
 
-                // change rear door type (how to find it; width + Exterior Entry description?) 
+                // create & start transaction for updating doors
+                using (Transaction t = new Transaction(curDoc, "Update Doors"))
+                {
+                    // start the second transaction
+                    t.Start();
 
-                // notify the user (verify swing parameter doesn't change)
-                // front and rear doors were changed per the selected spec level
+                    // change front door type (will it update the door in all design options?)
+                    // search for door from Covered Porch
+
+                    // change rear door type (how to find it; width + Exterior Entry description?) 
+
+                    // notify the user (verify swing parameter doesn't change)
+                    // front and rear doors were changed per the selected spec level
+
+                    // commit the transaction
+                    t.Commit();
+                }
 
                 #endregion
 
                 #region Cabinet Updates
 
-                // set the Interior Elevations sheet as the active view
+                // get the Interior Elevations sheet & set it as the active view
+                ViewSheet sheetIntr = Utils.GetViewSheetByName(curDoc, "Interior Elevations");
 
-                // change the upper cabinet height per the selected spec level
+                if (sheetIntr != null)
+                {
+                    uidoc.ActiveView = sheetIntr;
+                }
+                else
+                {
+                    TaskDialog.Show("Error", "No Interior Elevation sheet found");
+                    transGroup.RollBack();
+                    return Result.Failed;
+                }
 
-                // change the microwave cabinet height per the selected MW Cabinet height
+                // create & start transaction for updating cabinets
+                using (Transaction t = new Transaction(curDoc, "Update Cabinets"))
+                {
+                    // start the third transaction
+                    t.Start();
 
-                // add/remove the Ref Sp cabinet
+                    // change the upper cabinet height per the selected spec level
 
-                // raise/lower the backsplash height
-                // add/remove full backsplash
+                    // change the microwave cabinet height per the selected MW Cabinet height
 
-                // notify the user
-                // upper cabinets were revised per the selected spec level
-                // backsplash height was raised/lowered per the selected spec level
+                    // add/remove the Ref Sp cabinet
 
-                #endregion
+                    // raise/lower the backsplash height
+                    // add/remove full backsplash
 
-                #region Electrical Plan Updates
+                    // notify the user
+                    // upper cabinets were revised per the selected spec level
+                    // backsplash height was raised/lowered per the selected spec level
 
-                // set the first floor electrical plan as the active view
-
-                // change light fixtures in specified rooms on first floor
-
-                // add/remove the clg fan note
-
-                // add/remove the sprinkler outlet at the Garage
-                // add/remove outlet note
-                // add/remove dimension (can it be located 5' from the corner?)
-
-                // notify user
-                // light fixtures were changed in (list rooms) per the selected spec level
-                // Sprinkler outlet was added/removed at the Garage per the selected spec level
-
-                // set the second floor as the active view
-
-                // change light fixtures in specified rooms on second floor
-
-                // add/remove the clg fan note
-
-                // notify user
-                // light fixtures were changed in (list rooms) per the selected spec level
+                    // commit the transaction
+                    t.Commit();
+                }
 
                 #endregion
 
-                #region Dialogs
+                #region First Floor Electrical Updates
 
-                // show a dialog to notify the user that the spec level conversion is complete
-                // message should include client name & spec level
+                // get all views with Electrical in the name & associated with the First Floor
+                List<View> firstFloorElecViews = Utils.GetAllViewsByNameContainsAndAssociatedLevel(curDoc, "Electrical", "First Floor");
 
-                // set the appropriate checklist legend for the selected client and spec level as the actuive view
+                // get the first view in the list and set it as the active view
+                if (firstFloorElecViews.Any())
+                {
+                    uidoc.ActiveView = firstFloorElecViews.First();
+                }
+                else
+                {
+                    TaskDialog.Show("Error", "No Electrical views found for First Floor");
+                    transGroup.RollBack();
+                    return Result.Failed;
+                }
+
+                // start the transaction for first floor electrical updates
+                using (Transaction t = new Transaction(curDoc, "Update First Floor Electrical"))
+                {
+                    // start the fourth transaction
+                    t.Start();
+
+                    // replace the light fixtures in the specified rooms per the selected spec level
+                    
+                    // add/remove the sprinkler outlet at Garage
+                    
+                    // loop through all the views & add/remove the clg fan note & sprinkler outlet note
+                    foreach (View curElecView in firstFloorElecViews)
+                    {
+                        // add/remove ceiling fan note
+
+                        // add/remove sprinkler outlet note                        
+                    }
+
+                    // notify the user
+                    // first floor electrical plan was updated per the selected spec level
+
+                    // commit the transaction
+                    t.Commit();
+                }
 
                 #endregion
 
-                t.Commit();
+                #region Second Floor Electrical Updates
+
+                // Get all views with Electrical in the name & associated with the Second Floor
+                List<View> secondFloorElecViews = Utils.GetAllViewsByNameContainsAndAssociatedLevel(curDoc, "Electrical", "Second Floor");
+
+                // Null check (exit if no views found)
+                if (secondFloorElecViews.Any())
+                {
+                    // Get the first view in the list and set it as the active view
+                    uidoc.ActiveView = secondFloorElecViews.First();
+
+                    // Start the transaction for second floor electrical updates
+                    using (Transaction t = new Transaction(curDoc, "Update Second Floor Electrical"))
+                    {
+                        t.Start();
+
+                        // replace the light fixtures in the specified rooms per the selected spec level
+
+                        // loop through all the views & add/remove the clg fan note
+                        foreach (View elecView in secondFloorElecViews)
+                        {
+                            // add/remove ceiling fan note
+                        }
+
+                        // notify the user
+                        // second floor electrical plan was updated per the selected spec level
+
+                        // commit the transaction
+                        t.Commit();
+                    }
+                }
+
+                #endregion
+
+                transGroup.Assimilate();
             }
 
             return Result.Succeeded;
         }
+        
         internal static PushButtonData GetButtonData()
         {
             // use this method to define the properties for this command in the Revit ribbon

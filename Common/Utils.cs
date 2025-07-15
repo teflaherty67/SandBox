@@ -619,6 +619,21 @@ namespace SandBox.Common
             // Return null if no matching view is found
             return null;
         }
+
+        internal static View GetScheduleByNameContains(Document curDoc, string v)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal static List<View> GetAllViewsByNameContainsAndAssociatedLevel(Document curDoc, string v1, string v2)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal static ViewSheet GetViewSheetByName(Document curDoc, string v)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     #endregion
