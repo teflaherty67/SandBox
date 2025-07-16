@@ -62,7 +62,32 @@ namespace SandBox
                     t.Start();
 
                     // change the flooring for the specified rooms per the selected spec level
-                    Utils.UpdateFloorFinishInActiveView(curDoc, selectedSpecLevel);              
+                    List<string> listUpdatedRooms = Utils.UpdateFloorFinishInActiveView(curDoc, selectedSpecLevel);
+
+                    // create a list of the rooms updated
+                    string listRooms;
+                    if (listUpdatedRooms.Count == 1)
+                    {
+                        listRooms = listUpdatedRooms[0];
+                    }
+                    else if (listUpdatedRooms.Count == 2)
+                    {
+                        listRooms = $"{listUpdatedRooms[0]} and {listUpdatedRooms[1]}";
+                    }
+                    else
+                    {
+                        listRooms = string.Join(", ", listUpdatedRooms.Take(listUpdatedRooms.Count - 1)) + $", and {listUpdatedRooms.Last()}";
+                    }
+
+                    // notify the user
+                    TaskDialog tdFloorUpdate = new TaskDialog("Complete");
+                    tdFloorUpdate.MainIcon = Icon.TaskDialogIconInformation;
+                    tdFloorUpdate.Title = "Spec Conversion";
+                    tdFloorUpdate.TitleAutoPrefix = false;
+                    tdFloorUpdate.MainContent = $"Flooring was changed at {listRooms} per the specified spec level.";
+                    tdFloorUpdate.CommonButtons = TaskDialogCommonButtons.Close;
+
+                    TaskDialogResult tdFloorUpdateSuccess = tdFloorUpdate.Show();
 
                     // commit the transaction
                     t.Commit();                        
@@ -86,31 +111,31 @@ namespace SandBox
                     return Result.Failed;
                 }
 
-                // create & start transaction for updating doors
+                //create & start transaction for updating doors
                 using (Transaction t = new Transaction(curDoc, "Update Doors"))
-                {
-                    // start the second transaction
-                    t.Start();
+                    {
+                        // start the second transaction
+                        t.Start();
 
-                    // update front door type
-                    Utils.UpdateFrontDoorType(curDoc, selectedSpecLevel);
+                        // update front door type
+                        Utils.UpdateFrontDoorType(curDoc, selectedSpecLevel);
 
-                    // update rear door type
-                    Utils.UpdateRearDoorType(curDoc, selectedSpecLevel);
+                        // update rear door type
+                        Utils.UpdateRearDoorType(curDoc, selectedSpecLevel);
 
-                    // notify the user
-                    TaskDialog tdDrUpdate = new TaskDialog("Complete");
-                    tdDrUpdate.MainIcon = Icon.TaskDialogIconInformation;
-                    tdDrUpdate.Title = "Spec Conversion";
-                    tdDrUpdate.TitleAutoPrefix = false;
-                    tdDrUpdate.MainContent = "The front and rear doors were replaced per the specified spec level.";
-                    tdDrUpdate.CommonButtons = TaskDialogCommonButtons.Close;
+                        // notify the user
+                        TaskDialog tdDrUpdate = new TaskDialog("Complete");
+                        tdDrUpdate.MainIcon = Icon.TaskDialogIconInformation;
+                        tdDrUpdate.Title = "Spec Conversion";
+                        tdDrUpdate.TitleAutoPrefix = false;
+                        tdDrUpdate.MainContent = "The front and rear doors were replaced per the specified spec level.";
+                        tdDrUpdate.CommonButtons = TaskDialogCommonButtons.Close;
 
-                    TaskDialogResult tdDrUpdateSuccess = tdDrUpdate.Show();
+                        TaskDialogResult tdDrUpdateSuccess = tdDrUpdate.Show();
 
-                    // commit the transaction
-                    t.Commit();
-                }
+                        // commit the transaction
+                        t.Commit();
+                    }
 
                 #endregion
 
@@ -155,84 +180,84 @@ namespace SandBox
 
                 //#endregion
 
-                //#region First Floor Electrical Updates
+                #region First Floor Electrical Updates
 
-                //// get all views with Electrical in the name & associated with the First Floor
-                //List<View> firstFloorElecViews = Utils.GetAllViewsByNameContainsAndAssociatedLevel(curDoc, "Electrical", "First Floor");
+                // get all views with Electrical in the name & associated with the First Floor
+                List<View> firstFloorElecViews = Utils.GetAllViewsByNameContainsAndAssociatedLevel(curDoc, "Electrical", "First Floor");
 
-                //// get the first view in the list and set it as the active view
-                //if (firstFloorElecViews.Any())
-                //{
-                //    uidoc.ActiveView = firstFloorElecViews.First();
-                //}
-                //else
-                //{
-                //    TaskDialog.Show("Error", "No Electrical views found for First Floor");
-                //    transGroup.RollBack();
-                //    return Result.Failed;
-                //}
+                // get the first view in the list and set it as the active view
+                if (firstFloorElecViews.Any())
+                {
+                    uidoc.ActiveView = firstFloorElecViews.First();
+                }
+                else
+                {
+                    TaskDialog.Show("Error", "No Electrical views found for First Floor");
+                    transGroup.RollBack();
+                    return Result.Failed;
+                }
 
-                //// start the transaction for first floor electrical updates
-                //using (Transaction t = new Transaction(curDoc, "Update First Floor Electrical"))
-                //{
-                //    // start the fourth transaction
-                //    t.Start();
+                // start the transaction for first floor electrical updates
+                using (Transaction t = new Transaction(curDoc, "Update First Floor Electrical"))
+                {
+                    // start the fourth transaction
+                    t.Start();
 
-                //    // replace the light fixtures in the specified rooms per the selected spec level
-                //    Utils.UpdateLightingFixturesInActiveView(curDoc, selectedSpecLevel);
+                    // replace the light fixtures in the specified rooms per the selected spec level
+                    Utils.UpdateLightingFixturesInActiveView(curDoc, selectedSpecLevel);
 
-                //    // add/remove the sprinkler outlet at Garage
+                    // add/remove the sprinkler outlet at Garage
 
-                //    // loop through all the views & add/remove the clg fan note & sprinkler outlet note
-                //    foreach (View curElecView in firstFloorElecViews)
-                //    {
-                //        // add/remove ceiling fan note
+                    // loop through all the views & add/remove the clg fan note & sprinkler outlet note
+                    foreach (View curElecView in firstFloorElecViews)
+                    {
+                        // add/remove ceiling fan note
 
-                //        // add/remove sprinkler outlet note                        
-                //    }
+                        // add/remove sprinkler outlet note                        
+                    }
 
-                //    // notify the user
-                //    // first floor electrical plan was updated per the selected spec level
+                    // notify the user
+                    // first floor electrical plan was updated per the selected spec level
 
-                //    // commit the transaction
-                //    t.Commit();
-                //}
+                    // commit the transaction
+                    t.Commit();
+                }
 
-                //#endregion
+                #endregion
 
-                //#region Second Floor Electrical Updates
+                #region Second Floor Electrical Updates
 
-                //// Get all views with Electrical in the name & associated with the Second Floor
-                //List<View> secondFloorElecViews = Utils.GetAllViewsByNameContainsAndAssociatedLevel(curDoc, "Electrical", "Second Floor");
+                // Get all views with Electrical in the name & associated with the Second Floor
+                List<View> secondFloorElecViews = Utils.GetAllViewsByNameContainsAndAssociatedLevel(curDoc, "Electrical", "Second Floor");
 
-                //// Null check (exit if no views found)
-                //if (secondFloorElecViews.Any())
-                //{
-                //    // Get the first view in the list and set it as the active view
-                //    uidoc.ActiveView = secondFloorElecViews.First();
+                // Null check (exit if no views found)
+                if (secondFloorElecViews.Any())
+                {
+                    // Get the first view in the list and set it as the active view
+                    uidoc.ActiveView = secondFloorElecViews.First();
 
-                //    // Start the transaction for second floor electrical updates
-                //    using (Transaction t = new Transaction(curDoc, "Update Second Floor Electrical"))
-                //    {
-                //        t.Start();
+                    // Start the transaction for second floor electrical updates
+                    using (Transaction t = new Transaction(curDoc, "Update Second Floor Electrical"))
+                    {
+                        t.Start();
 
-                //        // replace the light fixtures in the specified rooms per the selected spec level
+                        // replace the light fixtures in the specified rooms per the selected spec level
 
-                //        // loop through all the views & add/remove the clg fan note
-                //        foreach (View elecView in secondFloorElecViews)
-                //        {
-                //            // add/remove ceiling fan note
-                //        }
+                        // loop through all the views & add/remove the clg fan note
+                        foreach (View elecView in secondFloorElecViews)
+                        {
+                            // add/remove ceiling fan note
+                        }
 
-                //        // notify the user
-                //        // second floor electrical plan was updated per the selected spec level
+                        // notify the user
+                        // second floor electrical plan was updated per the selected spec level
 
-                //        // commit the transaction
-                //        t.Commit();
-                //    }
-                //}
+                        // commit the transaction
+                        t.Commit();
+                    }
+                }
 
-                //#endregion
+                #endregion
 
                 transGroup.Assimilate();
             }

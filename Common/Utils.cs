@@ -871,6 +871,7 @@ namespace SandBox.Common
 
         internal static void UpdateFrontDoorType(Document curDoc, string selectedSpecLevel)
         {
+
             throw new NotImplementedException();
         }
 
@@ -895,7 +896,7 @@ namespace SandBox.Common
         /// Complete Home sets floor finish to "Carpet", Complete Home Plus sets it to "HS".
         /// Only processes rooms that are visible in the current active view.
         /// </remarks>
-        internal static void UpdateFloorFinishInActiveView(Document curDoc, string selectedSpecLevel)
+        internal static List<string> UpdateFloorFinishInActiveView(Document curDoc, string selectedSpecLevel)
         {
             // get the active view from the document
             View activeView = curDoc.ActiveView;
@@ -923,11 +924,11 @@ namespace SandBox.Common
             if (floorFinish == null)
             {
                 TaskDialog.Show("Error", "Invalid Spec Level selected.");
-                return;
-            }
+                return new List<string>();
+            }           
 
-            // counters
-            int updatedCount = 0;
+            // create an empty list to hold the room names fuond in the active view
+            List<string> m_updatedRoomNames = new List<string>();
            
             // loop through the rooms to update
             foreach (Room curRoom in m_RoomstoUpdate)
@@ -939,13 +940,15 @@ namespace SandBox.Common
                 {
                     // set the value of the floor finish parameter to the new value
                     paramFloorFinish.Set(floorFinish);
-                    updatedCount++;
+
+                    // add the room name to the ist
+                    Parameter paramRoomName = curRoom.get_Parameter(BuiltInParameter.ROOM_NAME);
+                    m_updatedRoomNames.Add(paramRoomName.AsString());
                 }
             }
 
-            // Show summary message
-            string message = $"Found {m_RoomstoUpdate.Count} room(s) in active view '{activeView.Name}'.\nUpdated flooring to '{floorFinish}' in {updatedCount} room(s).";
-            TaskDialog.Show("Flooring Update Complete", message);
+            // return the updated room names list
+            return m_updatedRoomNames;
         }
 
         /// <summary>
