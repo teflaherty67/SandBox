@@ -139,46 +139,46 @@ namespace SandBox
 
                 #endregion
 
-                //#region Cabinet Updates
+                #region Cabinet Updates
 
-                //// get the Interior Elevations sheet & set it as the active view
-                //ViewSheet sheetIntr = Utils.GetViewSheetByName(curDoc, "Interior Elevations");
+                // get the Interior Elevations sheet & set it as the active view
+                ViewSheet sheetIntr = Utils.GetViewSheetByName(curDoc, "Interior Elevations");
 
-                //if (sheetIntr != null)
-                //{
-                //    uidoc.ActiveView = sheetIntr;
-                //}
-                //else
-                //{
-                //    TaskDialog.Show("Error", "No Interior Elevation sheet found");
-                //    transGroup.RollBack();
-                //    return Result.Failed;
-                //}
+                if (sheetIntr != null)
+                {
+                    uidoc.ActiveView = sheetIntr;
+                }
+                else
+                {
+                    TaskDialog.Show("Error", "No Interior Elevation sheet found");
+                    transGroup.RollBack();
+                    return Result.Failed;
+                }
 
-                //// create & start transaction for updating cabinets
-                //using (Transaction t = new Transaction(curDoc, "Update Cabinets"))
-                //{
-                //    // start the third transaction
-                //    t.Start();
+                // create & start transaction for updating cabinets
+                using (Transaction t = new Transaction(curDoc, "Update Cabinets"))
+                {
+                    // start the third transaction
+                    t.Start();
 
-                //    // change the upper cabinet height per the selected spec level
+                    // change the upper cabinet height per the selected spec level
 
-                //    // change the microwave cabinet height per the selected MW Cabinet height
+                    // change the microwave cabinet height per the selected MW Cabinet height
 
-                //    // add/remove the Ref Sp cabinet
+                    // add/remove the Ref Sp cabinet
 
-                //    // raise/lower the backsplash height
-                //    // add/remove full backsplash
+                    // raise/lower the backsplash height
+                    // add/remove full backsplash
 
-                //    // notify the user
-                //    // upper cabinets were revised per the selected spec level
-                //    // backsplash height was raised/lowered per the selected spec level
+                    // notify the user
+                    // upper cabinets were revised per the selected spec level
+                    // backsplash height was raised/lowered per the selected spec level
 
-                //    // commit the transaction
-                //    t.Commit();
-                //}
+                    // commit the transaction
+                    t.Commit();
+                }
 
-                //#endregion
+                #endregion
 
                 #region First Floor Electrical Updates
 
