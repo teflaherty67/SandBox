@@ -216,178 +216,67 @@ namespace SandBox.Common
 
         #region Families
 
-        /// <summary>
-        /// Updates lighting fixtures in specified rooms based on the given specification level.
-        /// Only processes fixtures in rooms visible in the active view.
-        /// </summary>
-        /// <param name="curDoc">The current <see cref="Document"/>.</param>
-        /// <param name="specLevel">The specification level (e.g., "Complete Home", "Complete Home Plus").</param>
-        internal static void UpdateLightingFixturesInActiveView(Document curDoc, string specLevel)
+        internal static List<Family> GetAllFamilies(Document curDoc)
         {
-            // Define rooms that need lighting fixture updates
-            List<string> roomsToUpdate = new List<string>
-        {
-            "Master Bedroom",
-            "Covered Patio",
-            "Gameroom",
-            "Loft"
-        };
+            List<Family> m_returnList = new List<Family>();
 
-            // Determine target family type based on spec level
-            string targetFamilyType = specLevel switch
-            {
-                "Complete Home" => "LED",
-                "Complete Home Plus" => "Ceiling Fan",
-                _ => null
-            };
+            FilteredElementCollector m_colFamilies = new FilteredElementCollector(curDoc)
+                .OfClass(typeof(Family));
 
-            if (targetFamilyType == null)
+            foreach (Family curFamily in m_colFamilies)
             {
-                TaskDialog.Show("Error", "Invalid Spec Level selected.");
-                return;
+                m_returnList.Add(curFamily);
             }
 
-            // Get the active view
-            View activeView = curDoc.ActiveView;
-            if (activeView == null)
-            {
-                TaskDialog.Show("Error", "No active view found.");
-                return;
-            }
-
-            // Find target family symbol
-            FamilySymbol targetFamilySymbol = FindFamilySymbol(curDoc, "LT-No Base", targetFamilyType);
-            if (targetFamilySymbol == null)
-            {
-                TaskDialog.Show("Error", $"Family symbol '{targetFamilyType}' not found.");
-                return;
-            }
-
-            // Activate the family symbol if not already active
-            if (!targetFamilySymbol.IsActive)
-            {
-                targetFamilySymbol.Activate();
-            }
-
-            // Counters
-            int updatedCount = 0;
-            int roomsNotFound = 0;
-
-            // Iterate through each room to update lighting fixtures
-            foreach (string roomName in roomsToUpdate)
-            {
-                // Get the room by name in the active view only
-                List<Room> rooms = GetRoomByNameContainsInActiveView(curDoc, activeView, roomName);
-
-                // If no room found, show an error message and continue to the next room
-                if (rooms.Count == 0)
-                {
-                    roomsNotFound++;
-                    continue;
-                }
-
-                // Process each matched room
-                foreach (Room room in rooms)
-                {
-                    // Find the lighting fixture of the specified family in the room (active view only)
-                    List<FamilyInstance> lightingFixtures = GetLightFixtureInRoomInActiveView(curDoc, activeView, room, "LT-No Base");
-
-                    // Update the lighting fixture type
-                    foreach (FamilyInstance curFixture in lightingFixtures)
-                    {
-                        // Change the family type of the fixture
-                        curFixture.Symbol = targetFamilySymbol;
-                        updatedCount++;
-                    }
-                }
-            }
-
-            // Show summary message
-            string message = $"Updated {updatedCount} light fixtures to '{targetFamilyType}' in active view '{activeView.Name}'.";
-            if (roomsNotFound > 0)
-            {
-                message += $"\n{roomsNotFound} room type(s) not found in the active view.";
-            }
-
-            TaskDialog.Show("Light Fixture Update Complete", message);
+            return m_returnList;
         }
 
-        /// <summary>
-        /// Finds a family symbol by family name and type name
-        /// </summary>
-        /// <param name="curDoc">The Revit document</param>
-        /// <param name="familyName">The family name (e.g., "LT-No Base")</param>
-        /// <param name="typeName">The type name (e.g., "LED" or "Ceiling Fan")</param>
-        /// <returns>The family symbol or null if not found</returns>
-        private static FamilySymbol FindFamilySymbol(Document curDoc, string familyName, string typeName)
+        internal static void GetFamilyInstances(Document curDoc, Family duplicateFamily, out List<FamilyInstance> instances)
         {
-            return new FilteredElementCollector(curDoc)
-                .OfClass(typeof(FamilySymbol))
-                .Cast<FamilySymbol>()
-                .FirstOrDefault(fs => fs.Family.Name.Equals(familyName, StringComparison.OrdinalIgnoreCase) &&
-                                     fs.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
-        }
+            instances = new List<FamilyInstance>();
 
-        /// <summary>
-        /// Gets rooms by name that contain the specified string and are visible in the active view
-        /// </summary>
-        /// <param name="curDoc">Current document</param>
-        /// <param name="activeView">The active view</param>
-        /// <param name="roomNameContains">String that room name should contain</param>
-        /// <returns>List of matching rooms visible in active view</returns>
-        private static List<Room> GetRoomByNameContainsInActiveView(Document curDoc, View activeView, string roomNameContains)
-        {
-            List<Room> matchingRooms = new List<Room>();
-
-            // Get all rooms visible in the active view
-            FilteredElementCollector roomCollector = new FilteredElementCollector(curDoc, activeView.Id)
-                .OfCategory(BuiltInCategory.OST_Rooms)
-                .WhereElementIsNotElementType();
-
-            foreach (Room room in roomCollector.Cast<Room>())
-            {
-                if (room.Name.IndexOf(roomNameContains, StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    matchingRooms.Add(room);
-                }
-            }
-
-            return matchingRooms;
-        }
-
-        /// <summary>
-        /// Gets all light fixtures (family instances) in a specific room that are visible in the active view
-        /// </summary>
-        /// <param name="curDoc">The Revit document</param>
-        /// <param name="activeView">The active view</param>
-        /// <param name="room">The room to search in</param>
-        /// <param name="familyName">The family name to filter by (optional)</param>
-        /// <returns>List of family instances in the room visible in active view</returns>
-        private static List<FamilyInstance> GetLightFixtureInRoomInActiveView(Document curDoc, View activeView, Room room, string familyName = null)
-        {
-            List<FamilyInstance> m_lightFixtures = new List<FamilyInstance>();
-
-            // Get all lighting fixtures visible in the active view
-            var familyInstances = new FilteredElementCollector(curDoc, activeView.Id)
+            // Get all FamilyInstance elements in the document
+            var m_allInstances = new FilteredElementCollector(curDoc)
                 .OfClass(typeof(FamilyInstance))
-                .OfCategory(BuiltInCategory.OST_LightingFixtures)
-                .Cast<FamilyInstance>();
+                .Cast<FamilyInstance>()
+                .ToList();
 
-            foreach (FamilyInstance curInstance in familyInstances)
+            // Filter to find instances that belong to the specified family
+            foreach (FamilyInstance curFamInstance in m_allInstances)
             {
-                // Check the Room parameter
-                if (curInstance.Room != null && curInstance.Room.Id == room.Id)
+                if (curFamInstance.Symbol?.Family?.Id == curFamInstance.Id)
                 {
-                    // Filter by family name if specified
-                    if (string.IsNullOrEmpty(familyName) ||
-                        curInstance.Symbol.Family.Name.Equals(familyName, StringComparison.OrdinalIgnoreCase))
+                    instances.Add(curFamInstance);
+                }
+            }
+        }
+
+        public static FamilySymbol GetFamilySymbolByName(Document curDoc, string familyName, string typeName)
+        {
+            List<Family> m_famList = GetAllFamilies(curDoc);
+
+            // loop through families in current document and look for match
+            foreach (Family curFam in m_famList)
+            {
+                if (curFam.Name == familyName)
+                {
+                    // get family symbol from family
+                    ISet<ElementId> fsList = curFam.GetFamilySymbolIds();
+
+                    // loop through family symbol ids and look for match
+                    foreach (ElementId fsID in fsList)
                     {
-                        m_lightFixtures.Add(curInstance);
+                        FamilySymbol fs = curDoc.GetElement(fsID) as FamilySymbol;
+
+                        if (fs.Name == typeName)
+                        {
+                            return fs;
+                        }
                     }
                 }
             }
 
-            return m_lightFixtures;
+            return null;
         }
 
         #endregion
@@ -986,39 +875,98 @@ namespace SandBox.Common
             return m_matchingRooms;
         }
 
-        internal static List<Family> GetAllFamilies(Document curDoc)
+        #endregion
+
+        #region Task Dialog
+
+        /// <summary>
+        /// Displays a warning dialog to the user with custom title and message
+        /// </summary>
+        /// <param name="tdName">The internal name of the TaskDialog</param>
+        /// <param name="tdTitle">The title displayed in the dialog header</param>
+        /// <param name="textMessage">The main message content to display to the user</param>
+        internal static void TaskDialogWarning(string tdName, string tdTitle, string textMessage)
         {
-            List<Family> m_returnList = new List<Family>();
+            // Create a new TaskDialog with the specified name
+            TaskDialog m_Dialog = new TaskDialog(tdName);
 
-            FilteredElementCollector m_colFamilies = new FilteredElementCollector(curDoc)
-                .OfClass(typeof(Family));
+            // Set the warning icon to indicate this is a warning message
+            m_Dialog.MainIcon = Icon.TaskDialogIconWarning;
 
-            foreach (Family curFamily in m_colFamilies)
-            {
-                m_returnList.Add(curFamily);
-            }
+            // Set the custom title for the dialog
+            m_Dialog.Title = tdTitle;
 
-            return m_returnList;
+            // Disable automatic title prefixing to use our custom title exactly as specified
+            m_Dialog.TitleAutoPrefix = false;
+
+            // Set the main message content that will be displayed to the user
+            m_Dialog.MainContent = textMessage;
+
+            // Add a Close button for the user to dismiss the dialog
+            m_Dialog.CommonButtons = TaskDialogCommonButtons.Close;
+
+            // Display the dialog and capture the result (though we don't use it for warnings)
+            TaskDialogResult m_DialogResult = m_Dialog.Show();
         }
 
-        internal static void GetFamilyInstances(Document curDoc, Family duplicateFamily, out List<FamilyInstance> instances)
+        /// <summary>
+        /// Displays an information dialog to the user with custom title and message
+        /// </summary>
+        /// <param name="tdName">The internal name of the TaskDialog</param>
+        /// <param name="tdTitle">The title displayed in the dialog header</param>
+        /// <param name="textMessage">The main message content to display to the user</param>
+        internal static void TaskDialogInformation(string tdName, string tdTitle, string textMessage)
         {
-            instances = new List<FamilyInstance>();
+            // Create a new TaskDialog with the specified name
+            TaskDialog m_Dialog = new TaskDialog(tdName);
 
-            // Get all FamilyInstance elements in the document
-            var m_allInstances = new FilteredElementCollector(curDoc)
-                .OfClass(typeof(FamilyInstance))
-                .Cast<FamilyInstance>()
-                .ToList();
+            // Set the warning icon to indicate this is a warning message
+            m_Dialog.MainIcon = Icon.TaskDialogIconInformation;
 
-            // Filter to find instances that belong to the specified family
-            foreach (FamilyInstance curFamInstance in m_allInstances)
-            {
-                if (curFamInstance.Symbol?.Family?.Id == curFamInstance.Id)
-                {
-                    instances.Add(curFamInstance);
-                }
-            }
+            // Set the custom title for the dialog
+            m_Dialog.Title = tdTitle;
+
+            // Disable automatic title prefixing to use our custom title exactly as specified
+            m_Dialog.TitleAutoPrefix = false;
+
+            // Set the main message content that will be displayed to the user
+            m_Dialog.MainContent = textMessage;
+
+            // Add a Close button for the user to dismiss the dialog
+            m_Dialog.CommonButtons = TaskDialogCommonButtons.Close;
+
+            // Display the dialog and capture the result (though we don't use it for warnings)
+            TaskDialogResult m_DialogResult = m_Dialog.Show();
+        }
+
+        /// <summary>
+        /// Displays an error dialog to the user with custom title and message
+        /// </summary>
+        /// <param name="tdName">The internal name of the TaskDialog</param>
+        /// <param name="tdTitle">The title displayed in the dialog header</param>
+        /// <param name="textMessage">The main message content to display to the user</param>
+        internal static void TaskDialogError(string tdName, string tdTitle, string textMessage)
+        {
+            // Create a new TaskDialog with the specified name
+            TaskDialog m_Dialog = new TaskDialog(tdName);
+
+            // Set the warning icon to indicate this is a warning message
+            m_Dialog.MainIcon = Icon.TaskDialogIconError;
+
+            // Set the custom title for the dialog
+            m_Dialog.Title = tdTitle;
+
+            // Disable automatic title prefixing to use our custom title exactly as specified
+            m_Dialog.TitleAutoPrefix = false;
+
+            // Set the main message content that will be displayed to the user
+            m_Dialog.MainContent = textMessage;
+
+            // Add a Close button for the user to dismiss the dialog
+            m_Dialog.CommonButtons = TaskDialogCommonButtons.Close;
+
+            // Display the dialog and capture the result (though we don't use it for warnings)
+            TaskDialogResult m_DialogResult = m_Dialog.Show();
         }
 
         #endregion

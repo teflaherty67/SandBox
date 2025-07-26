@@ -60,11 +60,10 @@ namespace SandBox
             int totalInstances = instancesByGroup.Values.Sum(list => list.Count);
             int curInstanceCount = 0;
 
-            // Now you have organized batches:
-            // instancesByGroup["EL-Wall Base"] = all instances to move to EL-Wall Base
-            // instancesByGroup["EL-No Base"] = all instances to move to EL-No Base  
-            // instancesByGroup["LT-No Base"] = all instances to move to LT-No Base
+            // create an empty list for reporting purposes
+            List<string> missingTypes = new List<string>();            
 
+            // try-catch statement for transaction group
             try
             {
                 // create a transaction group to handle all changes
@@ -117,18 +116,44 @@ namespace SandBox
                                     // find the target base family
                                     Family targetFamily = baseFamilies.FirstOrDefault(f => f.Name == baseFamilyName);
 
-                                    // find the matchin type in the target family
-                                    // get all types in the target family
-                                    // look for a type that matches the current instance's type name
-                                    // handle the case where no matching type is found
+                                    // null check for target family
+                                    if (targetFamily == null)
+                                    {
+                                        Utils.TaskDialogError("Error", "Family Updates", $"Target family '{baseFamilyName}' not found.");
+                                        continue; // Skip this instance - leave it unchanged
+                                    }
 
-                                    // change the instance's type to the matching type in the target family
-                                    // use curInstance.ChangeTypeId(targetType.Id);
+                                    // Get the type name you're looking for
+                                    string typeName = curType.Name;
 
-                                    // error handling:
-                                    // what if the target family does not have a matching type?
-                                    // log issues for later review
+                                    // Find matching type in target family using your existing method
+                                    FamilySymbol targetType = Utils.GetFamilySymbolByName(curDoc, targetFamily.Name, typeName);
 
+                                    if (targetType != null)
+                                    {
+                                        // Change the instance to use this target type
+                                        curInstance.ChangeTypeId(targetType.Id);
+                                    }
+                                    else
+                                    {
+                                        // Log the missing type
+                                        string missingInfo = $"Family: {targetFamily.Name}, Missing Type: {typeName}";
+                                        missingTypes.Add(missingInfo);
+                                        // Skip this instance - leave it unchanged
+                                    }
+
+                                    // Delete unused duplicate families
+                                    foreach (var duplicateFamily in duplicateFamilies)
+                                    {
+                                        // Check if this family still has instances
+                                        Utils.GetFamilyInstances(curDoc, duplicateFamily, out List<FamilyInstance> remainingInstances);
+
+                                        if (remainingInstances.Count == 0)
+                                        {
+                                            // Family is not used, safe to delete
+                                            curDoc.Delete(duplicateFamily.Id);
+                                        }
+                                    }
                                 }
                             }
 
@@ -152,15 +177,25 @@ namespace SandBox
             // handle any exceptions that may occur
             catch (Exception ex)
             {
-                message = $"An error occurred during the family update: {ex.Message}";
+                Utils.TaskDialogError("Error", "Family Updates", $"An error occurred during the electrical family updates: {ex.Message}");
                 return Result.Failed;
             }
 
-            // report success to user
+            // report missing types to user
+            if (missingTypes.Count > 0)
+            {
+                string missingTypesMessage = "The following types were not found in the target families:\n\n";
+                missingTypesMessage += string.Join("\n", missingTypes);
 
+                Utils.TaskDialogError("Error", "Family Updates", missingTypesMessage);
+            }
+
+            // report success to user
+            Utils.TaskDialogInformation("Information", "Family Updates", "The electrical families have been successfully consolidated.");
 
             return Result.Succeeded;
         }
+
         internal static PushButtonData GetButtonData()
         {
             // use this method to define the properties for this command in the Revit ribbon
