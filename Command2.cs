@@ -1,4 +1,7 @@
 ﻿using SandBox.Classes;
+using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
+using System.Linq;
 
 namespace SandBox
 {
@@ -10,13 +13,13 @@ namespace SandBox
             // Revit application and document variables
             UIApplication uiapp = commandData.Application;
             UIDocument uidoc = uiapp.ActiveUIDocument;
-            Document doc = uidoc.Document;
+            Document curDoc = uidoc.Document;
 
             // Your code goes here
 
-
             return Result.Succeeded;
         }
+
         internal static PushButtonData GetButtonData()
         {
             // use this method to define the properties for this command in the Revit ribbon
@@ -34,5 +37,4 @@ namespace SandBox
             return myButtonData.Data;
         }
     }
-
 }

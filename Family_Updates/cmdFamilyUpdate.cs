@@ -1,6 +1,8 @@
 ﻿using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
 using SandBox.Classes;
 using SandBox.Common;
+using System.Windows;
 
 namespace SandBox
 {
@@ -39,20 +41,23 @@ namespace SandBox
             }).ToList();
 
             // Create dictionary to organize instances by base family
-            Dictionary<string, List<FamilyInstance>> instancesByGroup = new Dictionary<string, List<FamilyInstance>>();
+            Dictionary<string, List<Element>> instancesByGroup = new Dictionary<string, List<Element>>();
 
             // loop through each group of duplicates
             foreach (var curGroup in duplicateGroups)
             {
                 string baseFamilyName = curGroup.Key;
-                instancesByGroup[baseFamilyName] = new List<FamilyInstance>();
+                instancesByGroup[baseFamilyName] = new List<Element>(); // Changed to Element
 
                 foreach (Family duplicateFamily in curGroup)
                 {
                     // get all instances of the current duplicate family
                     Utils.GetFamilyInstances(curDoc, duplicateFamily, out List<FamilyInstance> instances);
+                    Utils.GetAllLegendComponents(curDoc, duplicateFamily, out List<LegendComponent> legendComponents);
+
                     // add the instances to this group's list
-                    instancesByGroup[baseFamilyName].AddRange(instances);
+                    instancesByGroup[baseFamilyName].AddRange(instances.Cast<Element>());
+                    instancesByGroup[baseFamilyName].AddRange(legendComponents.Cast<Element>());
                 }
             }
 
@@ -61,7 +66,7 @@ namespace SandBox
             int curInstanceCount = 0;
 
             // create an empty list for reporting purposes
-            List<string> missingTypes = new List<string>();            
+            List<string> missingTypes = new List<string>();
 
             // try-catch statement for transaction group
             try
@@ -89,10 +94,10 @@ namespace SandBox
                             foreach (var group in instancesByGroup)
                             {
                                 string baseFamilyName = group.Key;              // "EL-Wall Base", etc.
-                                List<FamilyInstance> instances = group.Value;  // instances for this group
+                                List<Element> instances = group.Value;          // Changed to Element
 
                                 // loop through each instance in the current group
-                                foreach (FamilyInstance curInstance in instances)
+                                foreach (Element curElement in instances)      // Changed to Element
                                 {
                                     // Check for cancellation
                                     if (consolidateProgressHelper.IsCancelled())
@@ -109,9 +114,16 @@ namespace SandBox
                                     curInstanceCount++;
                                     consolidateProgressHelper.UpdateProgress(curInstanceCount, $"Consolidating {curInstanceCount} of {totalInstances}");
 
-                                    // get the current instances family & type info
-                                    Family curFam = curInstance.Symbol.Family;
-                                    FamilySymbol curType = curInstance.Symbol;
+                                    // Handle both FamilyInstance and LegendComponent
+                                    FamilySymbol curType = null;
+                                    ElementId typeId = curElement.GetTypeId();
+
+                                    if (typeId != ElementId.InvalidElementId)
+                                    {
+                                        curType = curDoc.GetElement(typeId) as FamilySymbol;
+                                    }
+
+                                    if (curType == null) continue; // Skip if we can't get the symbol
 
                                     // find the target base family
                                     Family targetFamily = baseFamilies.FirstOrDefault(f => f.Name == baseFamilyName);
@@ -132,7 +144,7 @@ namespace SandBox
                                     if (targetType != null)
                                     {
                                         // Change the instance to use this target type
-                                        curInstance.ChangeTypeId(targetType.Id);
+                                        curElement.ChangeTypeId(targetType.Id);
                                     }
                                     else
                                     {
@@ -141,19 +153,20 @@ namespace SandBox
                                         missingTypes.Add(missingInfo);
                                         // Skip this instance - leave it unchanged
                                     }
+                                }
+                            }
 
-                                    // Delete unused duplicate families
-                                    foreach (var duplicateFamily in duplicateFamilies)
-                                    {
-                                        // Check if this family still has instances
-                                        Utils.GetFamilyInstances(curDoc, duplicateFamily, out List<FamilyInstance> remainingInstances);
+                            // Delete unused duplicate families (moved outside the instance loops)
+                            foreach (var duplicateFamily in duplicateFamilies)
+                            {
+                                // Check if this family still has instances
+                                Utils.GetFamilyInstances(curDoc, duplicateFamily, out List<FamilyInstance> remainingInstances);
+                                Utils.GetAllLegendComponents(curDoc, duplicateFamily, out List<LegendComponent> remainingLegendComponents);
 
-                                        if (remainingInstances.Count == 0)
-                                        {
-                                            // Family is not used, safe to delete
-                                            curDoc.Delete(duplicateFamily.Id);
-                                        }
-                                    }
+                                if (remainingInstances.Count == 0 && remainingLegendComponents.Count == 0)
+                                {
+                                    // Family is not used, safe to delete
+                                    curDoc.Delete(duplicateFamily.Id);
                                 }
                             }
 

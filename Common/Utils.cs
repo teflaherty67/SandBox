@@ -1,7 +1,8 @@
-﻿using Autodesk.Revit.DB;
+﻿using Autodesk.Revit.UI;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
 using SandBox.Classes;
-using System.Diagnostics.Metrics;
+using System.Diagnostics;
 using System.Windows.Controls;
 
 namespace SandBox.Common
@@ -967,6 +968,35 @@ namespace SandBox.Common
 
             // Display the dialog and capture the result (though we don't use it for warnings)
             TaskDialogResult m_DialogResult = m_Dialog.Show();
+        }
+
+        public static void GetAllLegendComponents(Document curDoc, Family family, out List<LegendComponent> legendComponents)
+        {
+            legendComponents = new List<LegendComponent>();
+
+            // Find the "Electrical" legend view
+            View electricalLegendView = new FilteredElementCollector(curDoc)
+                .OfClass(typeof(ViewLegend))
+                .Cast<ViewLegend>()
+                .FirstOrDefault(v => v.Name == "Electrical");
+
+            if (electricalLegendView != null)
+            {
+                // Get legend components from the specific legend view
+                var legendComps = new FilteredElementCollector(curDoc, electricalLegendView.Id)
+                    .OfClass(typeof(LegendComponent))
+                    .Cast<LegendComponent>()
+                    .ToList();
+
+                // Filter for the specific family
+                foreach (LegendComponent lc in legendComps)
+                {
+                    if (lc.Symbol?.Family?.Id == family.Id)
+                    {
+                        legendComponents.Add(lc);
+                    }
+                }
+            }
         }
 
         #endregion
