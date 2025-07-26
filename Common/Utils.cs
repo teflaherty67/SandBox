@@ -1,4 +1,5 @@
-﻿using Autodesk.Revit.DB.Architecture;
+﻿using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Architecture;
 using SandBox.Classes;
 using System.Diagnostics.Metrics;
 using System.Windows.Controls;
@@ -983,6 +984,41 @@ namespace SandBox.Common
 
             // return the matching rooms
             return m_matchingRooms;
+        }
+
+        internal static List<Family> GetAllFamilies(Document curDoc)
+        {
+            List<Family> m_returnList = new List<Family>();
+
+            FilteredElementCollector m_colFamilies = new FilteredElementCollector(curDoc)
+                .OfClass(typeof(Family));
+
+            foreach (Family curFamily in m_colFamilies)
+            {
+                m_returnList.Add(curFamily);
+            }
+
+            return m_returnList;
+        }
+
+        internal static void GetFamilyInstances(Document curDoc, Family duplicateFamily, out List<FamilyInstance> instances)
+        {
+            instances = new List<FamilyInstance>();
+
+            // Get all FamilyInstance elements in the document
+            var m_allInstances = new FilteredElementCollector(curDoc)
+                .OfClass(typeof(FamilyInstance))
+                .Cast<FamilyInstance>()
+                .ToList();
+
+            // Filter to find instances that belong to the specified family
+            foreach (FamilyInstance curFamInstance in m_allInstances)
+            {
+                if (curFamInstance.Symbol?.Family?.Id == curFamInstance.Id)
+                {
+                    instances.Add(curFamInstance);
+                }
+            }
         }
 
         #endregion
