@@ -878,6 +878,161 @@ namespace SandBox.Common
 
         #endregion
 
+        #region Shared Parameters
+
+        //check if specified parameter is already added to Revit file
+        public static bool ParamAddedToFile(Document curDoc, string paramName)
+        {
+            foreach (Parameter curParam in curDoc.ParameterBindings)
+            {
+                if (curParam.Definition.Name.Equals(paramName))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static void CreateSharedParam(Document curDoc, string groupName, string paramName, BuiltInCategory cat)
+        {
+            Definition curDef = null;
+
+            //check if current file has shared param file - if not then exit
+            DefinitionFile defFile = curDoc.Application.OpenSharedParameterFile();
+
+            //check if file has shared parameter file
+            if (defFile == null)
+            {
+                TaskDialog.Show("Error", "No shared parameter file.");
+                //Throw New Exception("No Shared Parameter File!")
+            }
+
+            //check if shared parameter exists in shared param file - if not then create
+            if (ParamExists(defFile.Groups, groupName, paramName) == false)
+            {
+                //create param
+                curDef = AddParamToFile(defFile, groupName, paramName);
+            }
+            else
+            {
+                curDef = GetParameterDefinitionFromFile(defFile, groupName, paramName);
+            }
+
+            //check if param is added to views - if not then add
+            if (ParamAddedToFile(curDoc, paramName) == false)
+            {
+                //add parameter to current Revitfile
+                AddParamToDocument(curDoc, curDef, cat);
+            }
+        }
+        private static Definition GetParameterDefinitionFromFile(DefinitionFile defFile, string groupName, string paramName)
+        {
+            // iterate the Definition groups of this file
+            foreach (DefinitionGroup group in defFile.Groups)
+            {
+                if (group.Name == groupName)
+                {
+                    // iterate the difinitions
+                    foreach (Definition definition in group.Definitions)
+                    {
+                        if (definition.Name == paramName)
+                            return definition;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public static bool AddParamToDocument(Document curDoc, Definition curDef, BuiltInCategory cat)
+        {
+            bool paramAdded = false;
+
+            //define category for shared param
+            Category myCat = curDoc.Settings.Categories.get_Item(cat);
+            CategorySet myCatSet = curDoc.Application.Create.NewCategorySet();
+            myCatSet.Insert(myCat);
+
+            //create binding
+            ElementBinding curBinding = curDoc.Application.Create.NewInstanceBinding(myCatSet);
+
+            //insert definition into binding
+            using (Transaction curTrans = new Transaction(curDoc, "Added Shared Parameter"))
+            {
+                if (curTrans.Start() == TransactionStatus.Started)
+                {
+                    paramAdded = curDoc.ParameterBindings.Insert(curDef, curBinding, GroupTypeId.IdentityData);
+                }
+
+                //commit changes
+                curTrans.Commit();
+            }
+
+            return paramAdded;
+        }
+
+        //check if specified parameter exists in shared parameter file
+        public static bool ParamExists(DefinitionGroups groupList, string groupName, string paramName)
+        {
+            //loop through groups and look for match
+            foreach (DefinitionGroup curGroup in groupList)
+            {
+                if (curGroup.Name.Equals(groupName) == true)
+                {
+                    //check if param exists
+                    foreach (Definition curDef in curGroup.Definitions)
+                    {
+                        if (curDef.Name.Equals(paramName))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        //add parameter to specified shared parameter file
+        public static Definition AddParamToFile(DefinitionFile defFile, string groupName, string paramName)
+        {
+            //create new shared parameter in specified file
+            DefinitionGroup defGroup = GetDefinitionGroup(defFile, groupName);
+
+            //check if group exists - if not then create
+            if (defGroup == null)
+            {
+                //create group
+                defGroup = defFile.Groups.Create(groupName);
+            }
+
+            //create parameter in group#
+            ExternalDefinitionCreationOptions curOptions = new ExternalDefinitionCreationOptions(paramName, SpecTypeId.String.Text);
+
+            curOptions.Visible = true;
+
+            Definition newParam = defGroup.Definitions.Create(curOptions);
+
+            return newParam;
+        }
+
+        //get parameter groups in specified shared parameter file
+        public static DefinitionGroup GetDefinitionGroup(DefinitionFile defFile, string groupName)
+        {
+            //loop through groups and look for match
+            foreach (DefinitionGroup curGroup in defFile.Groups)
+            {
+                if (curGroup.Name.Equals(groupName))
+                {
+                    return curGroup;
+                }
+            }
+
+            return null;
+        }
+
+        #endregion
+
         #region Task Dialog
 
         /// <summary>
@@ -970,34 +1125,35 @@ namespace SandBox.Common
             TaskDialogResult m_DialogResult = m_Dialog.Show();
         }
 
-        public static void GetAllLegendComponents(Document curDoc, Family family, out List<LegendComponent> legendComponents)
-        {
-            legendComponents = new List<LegendComponent>();
+        //public static void GetAllLegendComponents(Document curDoc, Family family, out List<LegendComponent> legendComponents)
+        //{
+        //    legendComponents = new List<LegendComponent>();
 
-            // Find the "Electrical" legend view
-            View electricalLegendView = new FilteredElementCollector(curDoc)
-                .OfClass(typeof(ViewLegend))
-                .Cast<ViewLegend>()
-                .FirstOrDefault(v => v.Name == "Electrical");
+        //    // Find the "Electrical" legend view
+        //    View electricalLegendView = new FilteredElementCollector(curDoc)
+        //        .OfClass(typeof(ViewLegend))
+        //        .Cast<ViewLegend>()
+        //        .FirstOrDefault(v => v.Name == "Electrical");
 
-            if (electricalLegendView != null)
-            {
-                // Get legend components from the specific legend view
-                var legendComps = new FilteredElementCollector(curDoc, electricalLegendView.Id)
-                    .OfClass(typeof(LegendComponent))
-                    .Cast<LegendComponent>()
-                    .ToList();
+        //    if (electricalLegendView != null)
+        //    {
+        //        // Get legend components from the specific legend view
+        //        var legendComps = new FilteredElementCollector(curDoc, electricalLegendView.Id)
+        //            .OfClass(typeof(LegendComponent))
+        //            .Cast<LegendComponent>()
+        //            .ToList();
 
-                // Filter for the specific family
-                foreach (LegendComponent lc in legendComps)
-                {
-                    if (lc.Symbol?.Family?.Id == family.Id)
-                    {
-                        legendComponents.Add(lc);
-                    }
-                }
-            }
-        }
+        //        // Filter for the specific family
+        //        foreach (LegendComponent lc in legendComps)
+        //        {
+        //            if (lc.Symbol?.Family?.Id == family.Id)
+        //            {
+        //                legendComponents.Add(lc);
+        //            }
+        //        }
+        //    }
+        //}
+
 
         #endregion
     }
