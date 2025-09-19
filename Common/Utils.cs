@@ -883,9 +883,11 @@ namespace SandBox.Common
         //check if specified parameter is already added to Revit file
         public static bool ParamAddedToFile(Document curDoc, string paramName)
         {
-            foreach (Parameter curParam in curDoc.ParameterBindings)
+            DefinitionBindingMapIterator iterator = curDoc.ParameterBindings.ForwardIterator();
+            while (iterator.MoveNext())
             {
-                if (curParam.Definition.Name.Equals(paramName))
+                Definition curParam = iterator.Key;
+                if (curParam.Name.Equals(paramName))
                 {
                     return true;
                 }
