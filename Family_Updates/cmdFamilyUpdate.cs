@@ -53,11 +53,11 @@ namespace SandBox
                 {
                     // get all instances of the current duplicate family
                     Utils.GetFamilyInstances(curDoc, duplicateFamily, out List<FamilyInstance> instances);
-                    Utils.GetAllLegendComponents(curDoc, duplicateFamily, out List<LegendComponent> legendComponents);
+                    //Utils.GetAllLegendComponents(curDoc, duplicateFamily, out List<LegendComponent> legendComponents);
 
                     // add the instances to this group's list
                     instancesByGroup[baseFamilyName].AddRange(instances.Cast<Element>());
-                    instancesByGroup[baseFamilyName].AddRange(legendComponents.Cast<Element>());
+                    //instancesByGroup[baseFamilyName].AddRange(legendComponents.Cast<Element>());
                 }
             }
 
@@ -161,13 +161,13 @@ namespace SandBox
                             {
                                 // Check if this family still has instances
                                 Utils.GetFamilyInstances(curDoc, duplicateFamily, out List<FamilyInstance> remainingInstances);
-                                Utils.GetAllLegendComponents(curDoc, duplicateFamily, out List<LegendComponent> remainingLegendComponents);
+                                //Utils.GetAllLegendComponents(curDoc, duplicateFamily, out List<LegendComponent> remainingLegendComponents);
 
-                                if (remainingInstances.Count == 0 && remainingLegendComponents.Count == 0)
-                                {
-                                    // Family is not used, safe to delete
-                                    curDoc.Delete(duplicateFamily.Id);
-                                }
+                                //if (remainingInstances.Count == 0 && remainingLegendComponents.Count == 0)
+                                //{
+                                //    // Family is not used, safe to delete
+                                //    curDoc.Delete(duplicateFamily.Id);
+                                //}
                             }
 
                             // commit the transaction

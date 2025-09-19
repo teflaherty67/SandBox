@@ -1,8 +1,9 @@
-﻿using SandBox.Classes;
-using Autodesk.Revit.DB;
+﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using System.Linq;
+using SandBox.Classes;
 using SandBox.Common;
+using System.Linq;
+using System.Windows.Controls;
 
 namespace SandBox
 {
@@ -19,11 +20,7 @@ namespace SandBox
             // get all the schedules in the project
             List<ViewSchedule> allSchedules = Utils.GetAllSchedules(curDoc);
 
-            // get the parameter definitions in the project
-            DefinitionGroups defGroup = null;
-
-            // create a variables for parameter group & name
-            string groupName = "Identity";
+            // create a variable for parameter name            
             string paramName = "Elevation Designation";
 
             // access shared parameter file
@@ -96,7 +93,7 @@ namespace SandBox
             }
 
             // start a transaction to update the parameter values
-            using (Transaction t2 = new Transaction(curDoc, "Update Schedule Browser Organization"))
+            using (Transaction t2 = new Transaction(curDoc, "Update Parameter Value"))
             {
                 // start the transaction
                 t2.Start();
@@ -110,23 +107,59 @@ namespace SandBox
                 {
                     // check if schedules are already included
                     CategorySet catSet = curBinding.Categories;
+                    Category catSchedule = curDoc.Settings.Categories.get_Item(BuiltInCategory.OST_Schedules);
+
+                    // if Schedules not included...
+                    if (!catSet.Contains(catSchedule))
+                    {
+                        // add Schedules to the current category set
+                        catSet.Insert(catSchedule);
+
+                        // create new binding with updated category set
+                        InstanceBinding newBinding = curDoc.Application.Create.NewInstanceBinding(catSet);
+
+                        // replace existing binding with new binding
+                        curDoc.ParameterBindings.ReInsert(paramDef, newBinding, GroupTypeId.IdentityData);
+                    }
                 }
 
                 // loop through all the schedules & set the parameter value
+                foreach (ViewSchedule curSchedule in allSchedules)
+                {
+                    if (curSchedule != null)
+                    {
+                        if(curSchedule.Name.Contains("Elevation"))
+                        {
+                            // extract the elevation name
+                            string[] partsElev = curSchedule.Name.Split('-');
+                            string partsName = partsElev[1].Trim();
+                            string elevName = partsName.Substring(0, 11);
 
-                // create a new browser organization called "elevation"
-
-                // set the parameters of the new browser organization
-
-                // make the new browser organization current
+                            // set the parameter value
+                            curSchedule.LookupParameter(paramName).Set(elevName);
+                        }
+                        else
+                        {
+                            // set the parameter value
+                            curSchedule.LookupParameter(paramName).Set("Shared");
+                        }
+                    }
+                }               
 
                 // commit the transaction
                 t2.Commit();
             }
 
             // inform the user that the browser organization was updated
-            Utils.TaskDialogInformation("Success", "Browser Organization", $"The Browser Organization for Schedules/Quantities has been update" +
-                $"to organize by the '{paramName}' parameter.");
+            //
+            // create variable for website URL
+            string urlSchedOrg = "https://lifestyle-usa-design.atlassian.net/wiki/spaces/MFS/pages/720897/Browser+Organization+Schedules";
+
+            // pass the URL to the form
+            frmSchedOrg curForm = new frmSchedOrg(urlSchedOrg);
+
+            // launch the form
+            curForm.ShowDialog();
 
             return Result.Succeeded;
         }

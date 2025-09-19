@@ -1,0 +1,38 @@
+﻿<Window x:Class="SandBox.frmSchedOrg"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SandBox"
+        mc:Ignorable="d"
+        Title="Browser Organization" 
+        Height="120" 
+        Width="400"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" 
+                   FontSize="14" 
+                   FontWeight="Bold" 
+                   Text="Success" 
+                   Margin="0,0,0,10"/>
+
+        <TextBlock Grid.Row="1" 
+                   TextWrapping="Wrap" 
+                   VerticalAlignment="Center">
+            The value of the Elevation Designation parameter has been updated for all schedules. Follow the instructions 
+            <Hyperlink Name="InstructionsLink" 
+                       Click="InstructionsLink_Click"
+                       Foreground="Blue"
+                       TextDecorations="Underline">
+                here
+            </Hyperlink>
+            to update the Browser Organization for Schedules/Quantities.
+        </TextBlock>
+    </Grid>
+</Window>
