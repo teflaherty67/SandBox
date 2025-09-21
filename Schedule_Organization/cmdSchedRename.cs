@@ -17,6 +17,9 @@ namespace SandBox
             UIDocument uidoc = uiapp.ActiveUIDocument;
             Document curDoc = uidoc.Document;
 
+            // create a hashset to hold all renamed schedules
+            HashSet<ElementId> modifiedScheduleIds = new HashSet<ElementId>();
+
             // list to hold schedules to rename
             List<ViewSchedule> schedsToRename = new List<ViewSchedule>();
 
@@ -48,6 +51,9 @@ namespace SandBox
                 // loop through the list and rename
                 foreach (ViewSchedule curSched in schedsToRename)
                 {
+                    // add to the hashset
+                    modifiedScheduleIds.Add(curSched.Id);
+
                     // get the exisitng name
                     string curName = curSched.Name;
 
@@ -73,8 +79,53 @@ namespace SandBox
                 t1.Commit();
             }
 
+            // get all the schedules again
+            List<ViewSchedule> allNewSchedules = Utils.GetAllSchedules(curDoc);
+
+            // create a list to hold schedule without the hyphen
+            List<ViewSchedule> schedNeedsHyphen = new List<ViewSchedule>();
+
+            // loop through each schedule
+            foreach (ViewSchedule curSched in allNewSchedules)
+            {
+                
+                // check for old naming convention
+                string schedName = curSched.Name;
+                if (schedName.Contains("Elevation") && !schedName.Contains(" - "))
+                {
+                    // add it to a list to rename
+                    schedNeedsHyphen.Add(curSched);
+                }
+            }
+
+            // create a transaction to rename the schedules
+            using (Transaction t2 = new Transaction(curDoc, "Add Hyphen to Schedules"))
+            {
+                // start the transaction
+                t2.Start();
+
+                // loop through the list and rename
+                foreach (ViewSchedule curSched in schedNeedsHyphen)
+                {
+                    // add to the hashset
+                    modifiedScheduleIds.Add(curSched.Id);
+
+                    // get the exisitng name
+                    string curName = curSched.Name;
+
+                    // insert hyphen before "Elevation"
+                    string newName = curName.Replace("Elevation ", "- Elevation");
+
+                    // rename the schedule
+                    curSched.Name = newName;
+                }
+
+                // commit the transaction
+                t2.Commit();
+            }
+
             // notify the user of completion
-            Utils.TaskDialogInformation("Success", "Rename Schedules", $"Renamed {schedsToRename.Count} schedules.");
+            Utils.TaskDialogInformation("Success", "Rename Schedules", $"Renamed {modifiedScheduleIds.Count} schedules.");
 
             return Result.Succeeded;
         }
