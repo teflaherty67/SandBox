@@ -260,29 +260,47 @@ namespace SandBox
                     // loop through all the schedules & set the parameter value
                     foreach (ViewSchedule curSchedule in allNewSchedules)
                     {
-                        if (curSchedule != null)
-                        {
-                            if (curSchedule.Name.Contains("Elevation"))
-                            {
-                                // extract the elevation name
-                                string[] partsElev = curSchedule.Name.Split('-');
-                                string partsName = partsElev[1].Trim();
-                                string elevName = partsName.Substring(0, 11);
+                        if (curSchedule == null) continue;
 
-                                // set the parameter value
-                                curSchedule.LookupParameter(paramName).Set(elevName);
-                            }
-                            else
+                        string paramValue = "Shared"; // fallback value
+
+                        if (curSchedule.Name.Contains("Elevation"))
+                        {
+                            string[] partsElev = curSchedule.Name.Split('-');
+
+                            if (partsElev.Length > 1)
                             {
-                                // set the parameter value
-                                curSchedule.LookupParameter(paramName).Set("Shared");
+                                string partsName = partsElev[1].Trim();
+
+                                // Normalize spacing
+                                string cleanName = Regex.Replace(partsName, @"\s+", " ").Trim();
+
+                                // Extract pattern like "Elevation C"
+                                Match match = Regex.Match(cleanName, @"^Elevation [A-Z]$", RegexOptions.IgnoreCase);
+
+                                if (match.Success)
+                                {
+                                    paramValue = match.Value;
+                                }
                             }
                         }
+
+                        Parameter param = curSchedule.LookupParameter(paramName);
+                        if (param != null && !param.IsReadOnly)
+                        {
+                            param.Set(paramValue);
+                        }
                     }
+
 
                     // commit the transaction
                     t4.Commit();
                 }
+
+                #endregion
+
+                #region Transfer Project Standards - Browser Organization
+
 
                 #endregion
 
