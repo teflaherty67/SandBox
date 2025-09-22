@@ -18,7 +18,7 @@ namespace SandBox
             Document curDoc = uidoc.Document;
 
             // get all the schedules in the project
-            List<ViewSchedule> allSchedules = Utils.GetAllSchedules(curDoc);
+            List<ViewSchedule> allNewSchedules = Utils.GetAllSchedules(curDoc);
 
             // create a variable for parameter name            
             string paramName = "Elevation Designation";
@@ -62,10 +62,10 @@ namespace SandBox
             // if not, create a transaction to add it
             if (!paramAdded)
             {
-                using (Transaction t1 = new Transaction(curDoc, "Add Shared Parameter"))
+                using (Transaction t3 = new Transaction(curDoc, "Add Shared Parameter"))
                 {
                     // start the transaction
-                    t1.Start();                    
+                    t3.Start();                    
 
                     // assign the parameter to the Schedules category
                     // 
@@ -80,7 +80,7 @@ namespace SandBox
                     curDoc.ParameterBindings.Insert(paramDef, binding, GroupTypeId.IdentityData);
 
                     // commit the transaction
-                    t1.Commit();
+                    t3.Commit();
                 }
 
                 // inform the user that the parameter was added
@@ -93,10 +93,10 @@ namespace SandBox
             }
 
             // start a transaction to update the parameter values
-            using (Transaction t2 = new Transaction(curDoc, "Update Parameter Value"))
+            using (Transaction t4 = new Transaction(curDoc, "Update Parameter Value"))
             {
                 // start the transaction
-                t2.Start();
+                t4.Start();
 
                 // get current parameter binding
                 BindingMap bindingMap = curDoc.ParameterBindings;
@@ -124,7 +124,7 @@ namespace SandBox
                 }
 
                 // loop through all the schedules & set the parameter value
-                foreach (ViewSchedule curSchedule in allSchedules)
+                foreach (ViewSchedule curSchedule in allNewSchedules)
                 {
                     if (curSchedule != null)
                     {
@@ -147,7 +147,7 @@ namespace SandBox
                 }               
 
                 // commit the transaction
-                t2.Commit();
+                t4.Commit();
             }
 
             // inform the user that the browser organization was updated

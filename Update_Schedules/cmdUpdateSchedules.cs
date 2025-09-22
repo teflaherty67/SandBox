@@ -17,6 +17,8 @@ namespace SandBox
             UIDocument uidoc = uiapp.ActiveUIDocument;
             Document curDoc = uidoc.Document;
 
+            #region Code for Transaction Group
+
             // create a hashset to hold all renamed schedules
             HashSet<ElementId> modifiedScheduleIds = new HashSet<ElementId>();
 
@@ -27,10 +29,10 @@ namespace SandBox
             string oldPattern = @"[A-Za-z]-\d{2}/[A-Za-z]/[A-Za-z]/([A-Za-z]/)?\w";
 
             // get all the schedules in the project
-            List<ViewSchedule> allCurSchedules = Utils.GetAllSchedules(curDoc);
+            List<ViewSchedule> allSchedules = Utils.GetAllSchedules(curDoc);
 
             // loop through each schedule
-            foreach (ViewSchedule curSched in allCurSchedules)
+            foreach (ViewSchedule curSched in allSchedules)
             {
                 // check for old naming convention
                 string schedName = curSched.Name;
@@ -42,27 +44,264 @@ namespace SandBox
                 }
             }
 
+            #endregion
+
             // create a transaction group to update the schedules
             using (TransactionGroup tgroup = new TransactionGroup(curDoc, "Update Schedules"))
             {
                 // start the transaction group
                 tgroup.Start();
 
+                #region replace plan code
 
+                // create a transaction to replace the plan code
+                using (Transaction t1 = new Transaction(curDoc, "Replace Plan Code"))
+                {
+                    // start the transaction
+                    t1.Start();
 
+                    // loop through the list and rename
+                    foreach (ViewSchedule curSched in schedsToRename)
+                    {
+                        // add to the hashset
+                        modifiedScheduleIds.Add(curSched.Id);
 
+                        // get the exisitng name
+                        string curName = curSched.Name;
 
+                        // extract elevation designation from current name using regex
+                        Match elevMatch = Regex.Match(curName, oldPattern);
+                        if (elevMatch.Success)
+                        {
+                            // get first character of the old pattern
+                            string elevLetter = elevMatch.Value.Substring(0, 1); // Get first char of the matched pattern
 
+                            // create the new pattern
+                            string newPattern = "Elevation " + elevLetter;
 
+                            // replace old pattern with new pattern
+                            string newName = curName.Replace(elevMatch.Value, newPattern);
+
+                            // rename the schedule
+                            curSched.Name = newName;
+                        }
+                    }
+
+                    // commit the transaction
+                    t1.Commit();
+                }
+
+                #endregion
+
+                #region Add Missing Hyphens
+
+                // get all the schedules again
+                List<ViewSchedule> allCurSchedules = Utils.GetAllSchedules(curDoc);
+
+                // create a list to hold schedule without the hyphen
+                List<ViewSchedule> schedNeedsHyphen = new List<ViewSchedule>();
+
+                // loop through each schedule
+                foreach (ViewSchedule curSched in allCurSchedules)
+                {
+
+                    // check for old naming convention
+                    string schedName = curSched.Name;
+                    if (schedName.Contains("Elevation") && !schedName.Contains(" - "))
+                    {
+                        // add it to a list to rename
+                        schedNeedsHyphen.Add(curSched);
+                    }
+                }
+
+                // create a transaction to add missing hyphens
+                using (Transaction t2 = new Transaction(curDoc, "Add Missing Hyphens"))
+                {
+                    // start the transaction
+                    t2.Start();
+
+                    // loop through the list and rename
+                    foreach (ViewSchedule curSched in schedNeedsHyphen)
+                    {
+                        // add to the hashset
+                        modifiedScheduleIds.Add(curSched.Id);
+
+                        // get the exisitng name
+                        string curName = curSched.Name;
+
+                        // insert hyphen before "Elevation"
+                        string newName = curName.Replace("Elevation ", "- Elevation ");
+
+                        // rename the schedule
+                        curSched.Name = newName;
+                    }
+
+                    // commit the transaction
+                    t2.Commit();
+                }
+
+                // notify the user of completion
+                Utils.TaskDialogInformation("Success", "Rename Schedules", $"Renamed {modifiedScheduleIds.Count} schedules.");
+
+                #endregion
+
+                #region Add Elevation Designation 
+
+                // get all the schedules in the project
+                List<ViewSchedule> allNewSchedules = Utils.GetAllSchedules(curDoc);
+
+                // create a variable for parameter name            
+                string paramName = "Elevation Designation";
+
+                // access shared parameter file
+                DefinitionFile defFile = curDoc.Application.OpenSharedParameterFile();
+
+                // null check
+                if (defFile == null)
+                {
+                    Utils.TaskDialogError("Error", "Browser Organization", "No shared parameter file found");
+                    return Result.Failed;
+                }
+
+                // create a variable to hold parameter definition
+                Definition paramDef = null;
+
+                // loop through the groups in the shared parameter file
+                foreach (DefinitionGroup group in defFile.Groups)
+                {
+                    // find the group we want
+                    Definition curDef = group.Definitions.get_Item(paramName);
+                    if (curDef != null)
+                    {
+                        paramDef = curDef;
+                        break;
+                    }
+                }
+
+                // null check
+                if (paramDef == null)
+                {
+                    // notify user parameter not found
+                    Utils.TaskDialogError("Error", "Browser Organization", $"Parameter '{paramName}' not found");
+                    return Result.Failed;
+                }
+
+                // check if the parameter exists in the project
+                bool paramAdded = Utils.ParamAddedToFile(curDoc, paramName);
+
+                // if not, create a transaction to add it
+                if (!paramAdded)
+                {
+                    using (Transaction t3 = new Transaction(curDoc, "Add Shared Parameter"))
+                    {
+                        // start the transaction
+                        t3.Start();
+
+                        // assign the parameter to the Schedules category
+                        // 
+                        // create category set for Schedules
+                        CategorySet catSet = curDoc.Application.Create.NewCategorySet();
+                        catSet.Insert(curDoc.Settings.Categories.get_Item(BuiltInCategory.OST_Schedules));
+
+                        // Create instance binding with Identity Data parameter group
+                        InstanceBinding binding = curDoc.Application.Create.NewInstanceBinding(catSet);
+
+                        // Insert the binding
+                        curDoc.ParameterBindings.Insert(paramDef, binding, GroupTypeId.IdentityData);
+
+                        // commit the transaction
+                        t3.Commit();
+                    }
+
+                    // inform the user that the parameter was added
+                    Utils.TaskDialogInformation("Success", "Browser Organization", $"Added '{paramName}' to the project & assigned it to Schedules.");
+                }
+                else
+                {
+                    // inform the user that the parameter already exists
+                    Utils.TaskDialogInformation("Info", "Browser Organization", $"The parameter '{paramName}' already exists in the project.");
+                }
+
+                #endregion
+
+                #region Set Parameter Values
+
+                // start a transaction to update the parameter values
+                using (Transaction t4 = new Transaction(curDoc, "Update Parameter Value"))
+                {
+                    // start the transaction
+                    t4.Start();
+
+                    // get current parameter binding
+                    BindingMap bindingMap = curDoc.ParameterBindings;
+                    ElementBinding curBinding = bindingMap.get_Item(paramDef) as ElementBinding;
+
+                    // edit the binding to include schedules
+                    if (curBinding != null)
+                    {
+                        // check if schedules are already included
+                        CategorySet catSet = curBinding.Categories;
+                        Category catSchedule = curDoc.Settings.Categories.get_Item(BuiltInCategory.OST_Schedules);
+
+                        // if Schedules not included...
+                        if (!catSet.Contains(catSchedule))
+                        {
+                            // add Schedules to the current category set
+                            catSet.Insert(catSchedule);
+
+                            // create new binding with updated category set
+                            InstanceBinding newBinding = curDoc.Application.Create.NewInstanceBinding(catSet);
+
+                            // replace existing binding with new binding
+                            curDoc.ParameterBindings.ReInsert(paramDef, newBinding, GroupTypeId.IdentityData);
+                        }
+                    }
+
+                    // loop through all the schedules & set the parameter value
+                    foreach (ViewSchedule curSchedule in allNewSchedules)
+                    {
+                        if (curSchedule != null)
+                        {
+                            if (curSchedule.Name.Contains("Elevation"))
+                            {
+                                // extract the elevation name
+                                string[] partsElev = curSchedule.Name.Split('-');
+                                string partsName = partsElev[1].Trim();
+                                string elevName = partsName.Substring(0, 11);
+
+                                // set the parameter value
+                                curSchedule.LookupParameter(paramName).Set(elevName);
+                            }
+                            else
+                            {
+                                // set the parameter value
+                                curSchedule.LookupParameter(paramName).Set("Shared");
+                            }
+                        }
+                    }
+
+                    // commit the transaction
+                    t4.Commit();
+                }
+
+                #endregion
 
                 // assimilate the transaction group
                 tgroup.Assimilate();
             }
 
-            // notify the user
+            // inform the user that the browser organization was updated
+            //
+            // create variable for website URL
+            string urlSchedOrg = "https://lifestyle-usa-design.atlassian.net/wiki/spaces/MFS/pages/720897/Browser+Organization+Schedules";
 
+            // pass the URL to the form
+            frmSchedOrg curForm = new frmSchedOrg(urlSchedOrg);
 
-                return Result.Succeeded;
+            // launch the form
+            curForm.ShowDialog();
+
+            return Result.Succeeded;
         }
 
         internal static PushButtonData GetButtonData()

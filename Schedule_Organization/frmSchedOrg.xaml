@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SandBox"
         mc:Ignorable="d"
         Title="Browser Organization" 
-        Height="120" 
+        Height="130" 
         Width="400"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">

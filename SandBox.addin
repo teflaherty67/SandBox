@@ -4,7 +4,7 @@
     <Text>SandBox - Command 1</Text>
     <Description>Some description</Description>
     <Assembly>SandBox\SandBox.dll</Assembly>
-    <FullClassName>SandBox.cmdSchedRename</FullClassName>
+    <FullClassName>SandBox.cmdUpdateSchedules</FullClassName>
     <ClientId>16d7d121-3a6b-4caa-a8ab-4981a950d43a</ClientId>
     <VendorId>com.YOUR COMPANY NAME</VendorId>
     <VendorDescription>YOUR COMPANY NAME, YOUR COMPANY URL</VendorDescription>
