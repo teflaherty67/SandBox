@@ -301,6 +301,59 @@ namespace SandBox
 
                 #region Transfer Project Standards - Browser Organization
 
+                // set the path to the view template file
+                string templateDoc = "S:\\Shared Folders\\Lifestyle USA Design\\Library 2025\\Template\\Project Standards.rvt";
+
+                // create a variable for the source document
+                Document sourceDoc = uidoc.Application.Application.OpenDocumentFile(templateDoc);
+
+                // create a variable for the target document                  
+                Document targetDoc = uidoc.Document;
+
+                // get the Browser Organizations from the source document
+                BrowserOrganization schedBrowserOrg = GetScheduleBrowserOrg(sourceDoc, "elevation");
+
+                // null check
+                if (schedBrowserOrg == null)
+                {
+                    Utils.TaskDialogError("Error", "Template Issue", "Browser organization 'elevation' not found in template file.");
+                    return Result.Failed; 
+                }
+
+                // check if it already exists in the target document
+                BrowserOrganization targetBrowserOrg = GetScheduleBrowserOrg(targetDoc, "elevation");                
+
+                try
+                {
+                    // start a transaction to transfer the browser organization
+                    using (Transaction t5 = new Transaction(curDoc, "Transfer Browser Organization"))
+                    {
+                        // start the transaction
+                        t5.Start();
+
+                        if (targetBrowserOrg == null)
+                        {
+                            ElementId newOrgId = ImportBrowserOrg(sourceDoc, targetDoc, schedBrowserOrg);
+                        }
+
+                        // commit the transaction
+                        t5.Commit();
+                    }
+                }
+                catch (Exception)
+                {
+                    // inform the user of any errors during the transfer
+                    Utils.TaskDialogError("Error", "Browser Organization", "Failed to transfer Browser Organization.");
+                    return Result.Failed;
+                }
+                finally
+                {
+                    // Close the source document when done
+                    if (sourceDoc != null && !sourceDoc.IsFamilyDocument)
+                    {
+                        sourceDoc.Close(false); // false = don't save
+                    }
+                }              
 
                 #endregion
 
@@ -308,18 +361,39 @@ namespace SandBox
                 tgroup.Assimilate();
             }
 
-            // inform the user that the browser organization was updated
-            //
-            // create variable for website URL
-            string urlSchedOrg = "https://lifestyle-usa-design.atlassian.net/wiki/spaces/MFS/pages/720897/Browser+Organization+Schedules";
-
-            // pass the URL to the form
-            frmSchedOrg curForm = new frmSchedOrg(urlSchedOrg);
-
-            // launch the form
-            curForm.ShowDialog();
+            // notify the user
+            Utils.TaskDialogInformation("Success", "Update Schedules", "The value of the Elevation Designation parameter has been updated for all schedules. " +
+                "The 'elevation' Browser Organization for Schedules/Quantities has been added. Please aplly that organization to the Project Browser.");
 
             return Result.Succeeded;
+        }
+
+        private ElementId ImportBrowserOrg(Document sourceDoc, Document targetDoc, BrowserOrganization schedBrowserOrg)
+        {
+            CopyPasteOptions copyPasteOptions = new CopyPasteOptions();
+            ElementId sourceOrgId = schedBrowserOrg.Id;
+            List<ElementId> elementIds = new List<ElementId>();
+            elementIds.Add(schedBrowserOrg.Id);
+            ElementTransformUtils.CopyElements(sourceDoc, elementIds, targetDoc, Autodesk.Revit.DB.Transform.Identity, copyPasteOptions);
+            return schedBrowserOrg.Id;
+        }
+
+        private BrowserOrganization GetScheduleBrowserOrg(Document sourceDoc, string orgName)
+        {
+            List<BrowserOrganization> m_browserOrgs = new FilteredElementCollector(sourceDoc)
+                .OfClass(typeof(BrowserOrganization))
+                .Cast<BrowserOrganization>()
+                .ToList();
+
+            foreach (BrowserOrganization curOrg in m_browserOrgs)
+            {
+                if (curOrg.Name.Equals(orgName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return curOrg;
+                }
+            }
+
+            return null;
         }
 
         internal static PushButtonData GetButtonData()
